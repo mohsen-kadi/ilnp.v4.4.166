@@ -16,4 +16,7 @@
 #define ILNP_INC_STATS(net, idev,field)		\
 		_DEVINC(net, ipv6, 64, idev, field)
 
+int ilnp6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len);
+int ilnp6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len);
+
 int ilnp_send_skb(struct sk_buff *skb);

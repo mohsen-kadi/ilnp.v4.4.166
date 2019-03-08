@@ -32,7 +32,14 @@
 #include <net/l3mdev.h>
 
 
-// check for sending the nonce
+
+// for udp: int ip6_send_skb(struct sk_buff *skb)
+// for tcp: int ip6_xmit(const struct sock *sk, struct sk_buff *skb, struct flowi6 *fl6,
+//                        struct ipv6_txoptions *opt, int tclass)
+
+
+
+// check for sending the nonce, after sending using the new family
 int ilnp_send_skb(struct sk_buff *skb)
 {
         struct net *net = sock_net(skb->sk);
