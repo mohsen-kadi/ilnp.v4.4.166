@@ -38,12 +38,8 @@
 //                        struct ipv6_txoptions *opt, int tclass)
 
 
-
-<<<<<<< HEAD
 // check for sending the nonce, after sending using the new family
-=======
 // check for sending the nonce
->>>>>>> c327a2087b53469fdd969006f8e9b227d06963d3
 int ilnp_send_skb(struct sk_buff *skb)
 {
         struct net *net = sock_net(skb->sk);
