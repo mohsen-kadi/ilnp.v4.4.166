@@ -80,7 +80,6 @@ const struct proto_ops ilnp6_dgram_ops = {
         .poll      = udp_poll,/* ok		*/
         .ioctl       = inet6_ioctl,/* postpone  */
         .listen      = sock_no_listen,/* ok		*/
-        // here...
         .shutdown    = inet_shutdown,/* ok		*/
         .setsockopt    = sock_common_setsockopt,/* ok, calls function from  sk->sk_prot->setsockopt which defined in related struct proto*/
         .getsockopt    = sock_common_getsockopt,/* ok, calls function from sk->sk_prot->getsockopt	which defined in related struct proto*/
