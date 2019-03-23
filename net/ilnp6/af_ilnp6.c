@@ -477,6 +477,12 @@ int ilnp6_getname(struct socket *sock, struct sockaddr *uaddr,
         return 0;
 }
 
+// NOTE MARK: DEPEND ON INET6 INIT & EXIT..
+// static struct pernet_operations ilnp6_net_ops = {
+//         .init = inet6_net_init,
+//         .exit = inet6_net_exit,
+// };
+
 // review proto_register for udp, and the fumction
 static int __init ilnp6_init(void)
 {
@@ -495,7 +501,6 @@ static int __init ilnp6_init(void)
         }
 
 
-        /*NOTE: MARK review this*/
         err = proto_register(&udpv6_prot, 1);
         if (err)
                 goto out_unregister_tcp_proto;
@@ -504,7 +509,6 @@ static int __init ilnp6_init(void)
         /* Register the family here so that the init calls below will
          * be able to create sockets. (?? is this dangerous ??)
          */
-        /*MARK here*/
         err = sock_register(&ilnp6_family_ops);
         if (err)
                 goto out_sock_register_fail;
@@ -516,87 +520,30 @@ static int __init ilnp6_init(void)
          *	able to communicate via both network protocols.
          */
 
-        err = register_pernet_subsys(&inet6_net_ops);
-        if (err)
-                goto register_pernet_fail;
-        err = ip6_mr_init();
-        if (err)
-                goto ipmr_fail;
-        err = icmpv6_init();
-        if (err)
-                goto icmp_fail;
-        err = ndisc_init();
-        if (err)
-                goto ndisc_fail;
-        err = igmp6_init();
-        if (err)
-                goto igmp_fail;
 
-        ipv6_stub = &ipv6_stub_impl;
-
-        err = ipv6_netfilter_init();
-        if (err)
-                goto netfilter_fail;
-        /* Create /proc/foo6 entries. */
-#ifdef CONFIG_PROC_FS
-        err = -ENOMEM;
-        if (raw6_proc_init())
-                goto proc_raw6_fail;
-        if (udplite6_proc_init())
-                goto proc_udplite6_fail;
-        if (ipv6_misc_proc_init())
-                goto proc_misc6_fail;
-        if (if6_proc_init())
-                goto proc_if6_fail;
-#endif
-        err = ip6_route_init();
-        if (err)
-                goto ip6_route_fail;
-        err = ndisc_late_init();
-        if (err)
-                goto ndisc_late_fail;
-        err = ip6_flowlabel_init();
-        if (err)
-                goto ip6_flowlabel_fail;
-        err = addrconf_init();
-        if (err)
-                goto addrconf_fail;
-
-        /* Init v6 extension headers. */
-        err = ipv6_exthdrs_init();
-        if (err)
-                goto ipv6_exthdrs_fail;
-
-        err = ipv6_frag_init();
-        if (err)
-                goto ipv6_frag_fail;
+// all registeration already done with ip6 excluded
 
         /* Init v6 transport protocols. */
         err = udpv6_init();
         if (err)
                 goto udpv6_fail;
 
-        err = udplitev6_init();
-        if (err)
-                goto udplitev6_fail;
+        // err = udplitev6_init();
+        // if (err)
+        //         goto udplitev6_fail;
+        //
+        // err = tcpv6_init();
+        // if (err)
+        //         goto tcpv6_fail;
+        //
+        // err = ipv6_packet_init();
+        // if (err)
+        //         goto ipv6_packet_fail;
+        //
+        // err = pingv6_init();
+        // if (err)
+        //         goto pingv6_fail;
 
-        err = tcpv6_init();
-        if (err)
-                goto tcpv6_fail;
-
-        err = ipv6_packet_init();
-        if (err)
-                goto ipv6_packet_fail;
-
-        err = pingv6_init();
-        if (err)
-                goto pingv6_fail;
-
-#ifdef CONFIG_SYSCTL
-        err = ipv6_sysctl_register();
-        if (err)
-                goto sysctl_fail;
-#endif
 out:
         return err;
 
