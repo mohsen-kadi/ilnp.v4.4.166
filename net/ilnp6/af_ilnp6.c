@@ -270,12 +270,61 @@ static const struct net_proto_family ilnp6_family_ops = {
         .owner  = THIS_MODULE,
 };
 
+int ilnp6_register_protosw(struct inet_protosw *p)
+{
+        struct list_head *lh;
+        struct inet_protosw *answer;
+        struct list_head *last_perm;
+        int protocol = p->protocol;
+        int ret;
 
-/*review version for ilnp*/
+        spin_lock_bh(&ilnpsw6_lock);
 
+        ret = -EINVAL;
+        if (p->type >= SOCK_MAX)
+                goto out_illegal;
 
+        /* If we are trying to override a permanent protocol, bail. */
+        answer = NULL;
+        ret = -EPERM;
+        last_perm = &inetsw6[p->type];
+        list_for_each(lh, &inetsw6[p->type]) {
+                answer = list_entry(lh, struct inet_protosw, list);
 
+                /* Check only the non-wild match. */
+                if (INET_PROTOSW_PERMANENT & answer->flags) {
+                        if (protocol == answer->protocol)
+                                break;
+                        last_perm = lh;
+                }
 
+                answer = NULL;
+        }
+        if (answer)
+                goto out_permanent;
+
+        /* Add the new entry after the last permanent entry if any, so that
+         * the new entry does not override a permanent entry when matched with
+         * a wild-card protocol. But it is allowed to override any existing
+         * non-permanent entry.  This means that when we remove this entry, the
+         * system automatically returns to the old behavior.
+         */
+        list_add_rcu(&p->list, last_perm);
+        ret = 0;
+out:
+        spin_unlock_bh(&ilnpsw6_lock);
+        return ret;
+
+out_permanent:
+        pr_err("Attempt to override permanent protocol %d\n", protocol);
+        goto out;
+
+out_illegal:
+        pr_err("Ignoring attempt to register invalid socket type %d\n",
+               p->type);
+        goto out;
+}
+EXPORT_SYMBOL(ilnp6_register_protosw);
 
 /* bind for INET6 API */
 int ilnp6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
@@ -291,7 +340,7 @@ int ilnp6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
         int err = 0;
 
         /* If the socket has its own bind function then use it.
-           in our case, tcpv6_prot & udpv6_prot  (struct proto)
+           in our case, tcpv6_prot & udp_ilnp6_proto  (struct proto)
            do not have..
          */
         if (sk->sk_prot->bind)
@@ -483,7 +532,6 @@ int ilnp6_getname(struct socket *sock, struct sockaddr *uaddr,
 //         .exit = inet6_net_exit,
 // };
 
-// review proto_register for udp, and the fumction
 static int __init ilnp6_init(void)
 {
         struct list_head *r;
@@ -500,8 +548,8 @@ static int __init ilnp6_init(void)
                 goto out;
         }
 
-
-        err = proto_register(&udpv6_prot, 1);
+        /*NOTE MARK:  review*/
+        err = proto_register(&udp_ilnp6_proto, 1);
         if (err)
                 goto out_unregister_tcp_proto;
 
@@ -519,15 +567,11 @@ static int __init ilnp6_init(void)
          *	in a host available by both INET and INET6 APIs and
          *	able to communicate via both network protocols.
          */
-
-
-// all registeration already done with ip6 excluded
-
+        // all registeration already done with ip6 excluded
         /* Init v6 transport protocols. */
         err = udpv6_init();
         if (err)
                 goto udpv6_fail;
-
         // err = udplitev6_init();
         // if (err)
         //         goto udplitev6_fail;
@@ -543,7 +587,6 @@ static int __init ilnp6_init(void)
         // err = pingv6_init();
         // if (err)
         //         goto pingv6_fail;
-
 out:
         return err;
 
@@ -605,7 +648,8 @@ out_unregister_raw_proto:
 out_unregister_udplite_proto:
         proto_unregister(&udplitev6_prot);
 out_unregister_udp_proto:
-        proto_unregister(&udpv6_prot);
+        /*NOTE MARK:  review*/
+        proto_unregister(&udp_ilnp6_proto);
 out_unregister_tcp_proto:
         proto_unregister(&tcpv6_prot);
         goto out;

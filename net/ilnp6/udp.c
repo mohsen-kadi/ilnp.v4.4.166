@@ -44,3 +44,78 @@
 #include <linux/seq_file.h>
 #include <trace/events/skb.h>
 #include "udp_impl.h"
+
+
+
+
+
+
+
+
+
+
+/* ------------------------------------------------------------------------ */
+/*NOTE: MARK review*/
+struct proto udp_ilnp6_proto = {
+        .name      = "UDPv6",
+        .owner       = THIS_MODULE,
+        .close       = udp_lib_close,
+        .connect     = ip6_datagram_connect,
+        .disconnect    = udp_disconnect,
+        .ioctl       = udp_ioctl,
+        .destroy     = udpv6_destroy_sock,
+        .setsockopt    = udpv6_setsockopt,
+        .getsockopt    = udpv6_getsockopt,
+        .sendmsg     = udpv6_sendmsg,
+        .recvmsg     = udpv6_recvmsg,
+        .backlog_rcv     = __udpv6_queue_rcv_skb,
+        .hash      = udp_lib_hash,
+        .unhash      = udp_lib_unhash,
+        .rehash      = udp_v6_rehash,
+        .get_port    = udp_v6_get_port,
+        .memory_allocated  = &udp_memory_allocated,
+        .sysctl_mem    = sysctl_udp_mem,
+        .sysctl_wmem     = &sysctl_udp_wmem_min,
+        .sysctl_rmem     = &sysctl_udp_rmem_min,
+        .obj_size    = sizeof(struct udp6_sock),
+        .slab_flags    = SLAB_DESTROY_BY_RCU,
+        .h.udp_table     = &udp_table,
+#ifdef CONFIG_COMPAT
+        .compat_setsockopt = compat_udpv6_setsockopt,
+        .compat_getsockopt = compat_udpv6_getsockopt,
+#endif
+        .clear_sk    = udp_v6_clear_sk,
+};
+
+static struct inet_protosw udpv6_protosw = {
+        .type =      SOCK_DGRAM,
+        .protocol =  IPPROTO_UDP,
+        .prot =      &udp_ilnp6_proto,
+        .ops =       &ilnp6_dgram_ops,
+        .flags =     INET_PROTOSW_PERMANENT,
+};
+
+int __init udpv6_init(void)
+{
+        int ret;
+
+        ret = inet6_add_protocol(&udpv6_protocol, IPPROTO_UDP);
+        if (ret)
+                goto out;
+
+        ret = inet6_register_protosw(&udpv6_protosw);
+        if (ret)
+                goto out_udpv6_protocol;
+out:
+        return ret;
+
+out_udpv6_protocol:
+        inet6_del_protocol(&udpv6_protocol, IPPROTO_UDP);
+        goto out;
+}
+
+void udpv6_exit(void)
+{
+        inet6_unregister_protosw(&udpv6_protosw);
+        inet6_del_protocol(&udpv6_protocol, IPPROTO_UDP);
+}

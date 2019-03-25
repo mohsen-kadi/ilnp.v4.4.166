@@ -10,6 +10,8 @@ extern struct proto udplitev6_prot;
 extern struct proto tcpv6_prot;
 extern struct proto pingv6_prot;
 
+/* ILNPv6 transport protocol*/
+extern struct proto udp_ilnp6_proto;
 struct flowi6;
 
 /* extension headers */

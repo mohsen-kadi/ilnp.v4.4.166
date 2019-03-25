@@ -20,7 +20,7 @@
  *		Alan Cox	:	Cleaned up, and sorted types.
  *		Pedro Roque	:	inet6 protocols
  */
- 
+
 #ifndef _PROTOCOL_H
 #define _PROTOCOL_H
 
@@ -85,7 +85,7 @@ struct inet_protosw {
 
 	struct proto	 *prot;
 	const struct proto_ops *ops;
-  
+
 	unsigned char	 flags;      /* See INET_PROTOSW_* below.  */
 };
 #define INET_PROTOSW_REUSE 0x01	     /* Are ports automatically reusable? */
@@ -115,6 +115,9 @@ int inet6_add_protocol(const struct inet6_protocol *prot, unsigned char num);
 int inet6_del_protocol(const struct inet6_protocol *prot, unsigned char num);
 int inet6_register_protosw(struct inet_protosw *p);
 void inet6_unregister_protosw(struct inet_protosw *p);
+/*NOTE: MARK  register ilnp*/
+int ilnp6_register_protosw(struct inet_protosw *p);
+
 #endif
 int inet6_add_offload(const struct net_offload *prot, unsigned char num);
 int inet6_del_offload(const struct net_offload *prot, unsigned char num);
