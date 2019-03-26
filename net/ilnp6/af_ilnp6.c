@@ -243,11 +243,11 @@ const struct proto_ops ilnp6_dgram_ops = {
         .family      = PF_ILNP6,/* here the new family*/
         .owner       = THIS_MODULE,
         .release     = inet6_release,/* quick scan, no changes*/
-        .bind      = inet6_bind,/* need modification for checing the family, new function*/
+        .bind      = ilnp6_bind,
         .connect     = inet_dgram_connect,/* there is a check if (addr_len < sizeof(uaddr->sa_family)) return -EINVAL;		*/
         .socketpair    = sock_no_socketpair,/* a do nothing, ok	*/
         .accept      = sock_no_accept,/* a do nothing, ok	*/
-        .getname     = inet6_getname,   /* review, new function*/
+        .getname     = ilnp6_getname,
         .poll      = udp_poll,/* ok		*/
         .ioctl       = inet6_ioctl,/* postpone  */
         .listen      = sock_no_listen,/* ok		*/
@@ -525,6 +525,7 @@ int ilnp6_getname(struct socket *sock, struct sockaddr *uaddr,
         *uaddr_len = sizeof(*sin);
         return 0;
 }
+EXPORT_SYMBOL(ilnp6_getname);
 
 // NOTE MARK: DEPEND ON INET6 INIT & EXIT..
 // static struct pernet_operations ilnp6_net_ops = {

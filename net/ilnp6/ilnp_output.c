@@ -31,7 +31,7 @@
 #include <linux/mroute6.h>
 #include <net/l3mdev.h>
 
-
+#include <net/ilnp6.h>
 
 // for udp: int ip6_send_skb(struct sk_buff *skb)
 // for tcp: int ip6_xmit(const struct sock *sk, struct sk_buff *skb, struct flowi6 *fl6,

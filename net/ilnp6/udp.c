@@ -59,12 +59,13 @@
 struct proto udp_ilnp6_proto = {
         .name      = "UDPv6",
         .owner       = THIS_MODULE,
-        .close       = udp_lib_close,
-        .connect     = ip6_datagram_connect,
-        .disconnect    = udp_disconnect,
-        .ioctl       = udp_ioctl,
-        .destroy     = udpv6_destroy_sock,
-        .setsockopt    = udpv6_setsockopt,
+        .close       = udp_lib_close, /*ok*/
+        .connect     = ilnp6_datagram_connect, // ok til setting dst_cache
+        .disconnect    = udp_disconnect, // ok
+        .ioctl       = udp_ioctl, // postpone
+        // MARK NOTE: review
+        .destroy     = udpv6_destroy_sock, // calls udp_v6_flush_pending_frames
+        .setsockopt    = udpv6_setsockopt, // review, pass  udp_v6_push_pending_frames as parameter
         .getsockopt    = udpv6_getsockopt,
         .sendmsg     = udpv6_sendmsg,
         .recvmsg     = udpv6_recvmsg,

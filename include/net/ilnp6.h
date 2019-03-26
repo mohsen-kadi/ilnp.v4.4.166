@@ -17,6 +17,11 @@
 		_DEVINC(net, ipv6, 64, idev, field)
 
 int ilnp6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len);
-int ilnp6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len);
+int ilnp6_getname(struct socket *sock, struct sockaddr *uaddr,
+                  int *uaddr_len, int peer);
+
+
+
+int ilnp6_datagram_connect(struct sock *sk, struct sockaddr *addr, int addr_len);
 
 int ilnp_send_skb(struct sk_buff *skb);
