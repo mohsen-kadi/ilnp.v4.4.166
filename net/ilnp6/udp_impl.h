@@ -13,6 +13,6 @@
 
 
 
-
+int udp_ilnp6_sendmsg(struct sock *sk, struct msghdr *msg, size_t len);
 
 #endif	/* _UDP6_IMPL_H */
