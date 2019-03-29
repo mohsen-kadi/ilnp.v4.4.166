@@ -355,8 +355,14 @@ do_confirm:
         goto out;
 }
 
+// NOTE: MARK now we use udp over ipv6
+static const struct inet6_protocol udp_ilnp6_protocol = {
+        .handler = udpv6_rcv,
+        .err_handler = udpv6_err,
+        .flags   = INET6_PROTO_NOPOLICY|INET6_PROTO_FINAL,
+};
 /* ------------------------------------------------------------------------ */
-/*NOTE: MARK review*/
+/*NOTE: MARK review, the previous struct.. for receive*/
 struct proto udp_ilnp6_proto = {
         .name      = "UDPv6",
         .owner       = THIS_MODULE,
@@ -389,7 +395,7 @@ struct proto udp_ilnp6_proto = {
         .clear_sk    = udp_v6_clear_sk,
 };
 
-static struct inet_protosw udpv6_protosw = {
+static struct inet_protosw udp_ilnpv6_protosw = {
         .type =      SOCK_DGRAM,
         .protocol =  IPPROTO_UDP,
         .prot =      &udp_ilnp6_proto,
@@ -397,26 +403,27 @@ static struct inet_protosw udpv6_protosw = {
         .flags =     INET_PROTOSW_PERMANENT,
 };
 
-int __init udpv6_init(void)
+int __init udp_ilnp6_init(void)
 {
         int ret;
-
-        ret = inet6_add_protocol(&udpv6_protocol, IPPROTO_UDP);
+        // review
+        ret = ilnp6_add_protocol(&udp_ilnp6_protocol, IPPROTO_UDP);
         if (ret)
                 goto out;
-
-        ret = inet6_register_protosw(&udpv6_protosw);
+        // review
+        ret = ilnp6_register_protosw(&udp_ilnpv6_protosw);
         if (ret)
                 goto out_udpv6_protocol;
 out:
         return ret;
 
 out_udpv6_protocol:
-        inet6_del_protocol(&udpv6_protocol, IPPROTO_UDP);
+        ilnp6_del_protocol(&udpv6_protocol, IPPROTO_UDP);
         goto out;
 }
 
-void udpv6_exit(void)
+// review
+void udp_ilnp6_exit(void)
 {
         inet6_unregister_protosw(&udpv6_protosw);
         inet6_del_protocol(&udpv6_protocol, IPPROTO_UDP);

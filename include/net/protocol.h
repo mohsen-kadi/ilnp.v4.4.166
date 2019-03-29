@@ -116,7 +116,10 @@ int inet6_del_protocol(const struct inet6_protocol *prot, unsigned char num);
 int inet6_register_protosw(struct inet_protosw *p);
 void inet6_unregister_protosw(struct inet_protosw *p);
 /*NOTE: MARK  register ilnp*/
+int ilnp6_add_protocol(const struct inet6_protocol *prot, unsigned char num);
+int ilnp6_del_protocol(const struct inet6_protocol *prot, unsigned char num);
 int ilnp6_register_protosw(struct inet_protosw *p);
+void ilnp6_unregister_protosw(struct inet_protosw *p);
 
 #endif
 int inet6_add_offload(const struct net_offload *prot, unsigned char num);

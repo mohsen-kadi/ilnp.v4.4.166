@@ -32,6 +32,10 @@ void udplitev6_exit(void);
 int tcpv6_init(void);
 void tcpv6_exit(void);
 
+/*for ilnpv6*/
+int udp_ilnp6_init(void);
+void udp_ilnp6_exit(void);
+
 int udpv6_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len);
 
 /* this does all the common and the specific ctl work */

@@ -287,8 +287,8 @@ int ilnp6_register_protosw(struct inet_protosw *p)
         /* If we are trying to override a permanent protocol, bail. */
         answer = NULL;
         ret = -EPERM;
-        last_perm = &inetsw6[p->type];
-        list_for_each(lh, &inetsw6[p->type]) {
+        last_perm = &ilnpsw6[p->type];
+        list_for_each(lh, &ilnpsw6[p->type]) {
                 answer = list_entry(lh, struct inet_protosw, list);
 
                 /* Check only the non-wild match. */
@@ -326,6 +326,20 @@ out_illegal:
 }
 EXPORT_SYMBOL(ilnp6_register_protosw);
 
+void ilnp6_unregister_protosw(struct inet_protosw *p)
+{
+        if (INET_PROTOSW_PERMANENT & p->flags) {
+                pr_err("Attempt to unregister permanent protocol %d\n",
+                       p->protocol);
+        } else {
+                spin_lock_bh(&ilnpsw6_lock);
+                list_del_rcu(&p->list);
+                spin_unlock_bh(&ilnpsw6_lock);
+
+                synchronize_net();
+        }
+}
+EXPORT_SYMBOL(ilnp6_unregister_protosw);
 /* bind for INET6 API */
 int ilnp6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 {
@@ -570,7 +584,7 @@ static int __init ilnp6_init(void)
          */
         // all registeration already done with ip6 excluded
         /* Init v6 transport protocols. */
-        err = udpv6_init();
+        err = udp_ilnp6_init();
         if (err)
                 goto udpv6_fail;
         // err = udplitev6_init();
@@ -602,7 +616,7 @@ ipv6_packet_fail:
 tcpv6_fail:
         udplitev6_exit();
 udplitev6_fail:
-        udpv6_exit();
+        udp_ilnp6_exit();
 udpv6_fail:
         ipv6_frag_exit();
 ipv6_frag_fail:
