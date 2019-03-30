@@ -69,20 +69,29 @@ MODULE_LICENSE("GPL");
 static struct list_head ilnpsw6[SOCK_MAX];
 static DEFINE_SPINLOCK(ilnpsw6_lock); /*used inregister and unregister*/
 
-struct ilnpv6_params ilnpv6_defaults = {
-        .disable_ilnpv6 = 0,
-        .autoconf = 1,
-};
+// struct ilnpv6_params ilnpv6_defaults = {
+//         .disable_ilnpv6 = 0,
+//         .autoconf = 1,
+// };
 
-static int disable_ilnpv6_mod;
-module_param_named(disable, disable_ilnpv6_mod, int, 0444);
-MODULE_PARM_DESC(disable, "Disable ILNPv6 module such that it is non-functional");
+//static int disable_ilnpv6_mod;
+// module_param_named(disable, disable_ilnpv6_mod, int, 0444);
+// MODULE_PARM_DESC(disable, "Disable ILNPv6 module such that it is non-functional");
+//
+// module_param_named(disable_ilnpv6, ilnpv6_defaults.disable_ilnpv6, int, 0444);
+// MODULE_PARM_DESC(disable_ilnpv6, "Disable ILNPv6 on all interfaces");
+//
+// module_param_named(autoconf, ilnpv6_defaults.autoconf, int, 0444);
+// MODULE_PARM_DESC(autoconf, "Enable ILNPv6 address autoconfiguration on all interfaces");
 
-module_param_named(disable_ilnpv6, ilnpv6_defaults.disable_ilnpv6, int, 0444);
-MODULE_PARM_DESC(disable_ilnpv6, "Disable ILNPv6 on all interfaces");
 
-module_param_named(autoconf, ilnpv6_defaults.autoconf, int, 0444);
-MODULE_PARM_DESC(autoconf, "Enable ILNPv6 address autoconfiguration on all interfaces");
+// repeated from /net/ipv6/af_inet6.c#L93
+static __inline__ struct ipv6_pinfo *inet6_sk_generic(struct sock *sk)
+{
+        const int offset = sk->sk_prot->obj_size - sizeof(struct ipv6_pinfo);
+
+        return (struct ipv6_pinfo *)(((u8 *)sk) + offset);
+}
 
 /*review*/
 static int ilnp6_create(struct net *net, struct socket *sock, int protocol,
@@ -558,10 +567,10 @@ static int __init ilnp6_init(void)
         for (r = &ilnpsw6[0]; r < &ilnpsw6[SOCK_MAX]; ++r)
                 INIT_LIST_HEAD(r);
 
-        if (disable_ilnpv6_mod) {
-                pr_info("ILNPv6: Loaded, but administratively disabled, reboot required to enable\n");
-                goto out;
-        }
+        // if (disable_ilnpv6_mod) {
+        //         pr_info("ILNPv6: Loaded, but administratively disabled, reboot required to enable\n");
+        //         goto out;
+        // }
 
         /*NOTE MARK:  review*/
         err = proto_register(&udp_ilnp6_proto, 1);
@@ -587,89 +596,23 @@ static int __init ilnp6_init(void)
         err = udp_ilnp6_init();
         if (err)
                 goto udpv6_fail;
-        // err = udplitev6_init();
-        // if (err)
-        //         goto udplitev6_fail;
-        //
-        // err = tcpv6_init();
-        // if (err)
-        //         goto tcpv6_fail;
-        //
-        // err = ipv6_packet_init();
-        // if (err)
-        //         goto ipv6_packet_fail;
-        //
-        // err = pingv6_init();
-        // if (err)
-        //         goto pingv6_fail;
 out:
         return err;
 
-#ifdef CONFIG_SYSCTL
-sysctl_fail:
-        pingv6_exit();
-#endif
-pingv6_fail:
-        ipv6_packet_cleanup();
-ipv6_packet_fail:
-        tcpv6_exit();
-tcpv6_fail:
-        udplitev6_exit();
-udplitev6_fail:
-        udp_ilnp6_exit();
+
 udpv6_fail:
         ipv6_frag_exit();
-ipv6_frag_fail:
-        ipv6_exthdrs_exit();
-ipv6_exthdrs_fail:
-        addrconf_cleanup();
-addrconf_fail:
-        ip6_flowlabel_cleanup();
-ip6_flowlabel_fail:
-        ndisc_late_cleanup();
-ndisc_late_fail:
-        ip6_route_cleanup();
-ip6_route_fail:
-#ifdef CONFIG_PROC_FS
-        if6_proc_exit();
-proc_if6_fail:
-        ipv6_misc_proc_exit();
-proc_misc6_fail:
-        udplite6_proc_exit();
-proc_udplite6_fail:
-        raw6_proc_exit();
-proc_raw6_fail:
-#endif
-        ipv6_netfilter_fini();
-netfilter_fail:
-        igmp6_cleanup();
-igmp_fail:
-        ndisc_cleanup();
-ndisc_fail:
-        ip6_mr_cleanup();
-icmp_fail:
-        unregister_pernet_subsys(&inet6_net_ops);
-ipmr_fail:
-        icmpv6_cleanup();
-register_pernet_fail:
-        sock_unregister(PF_INET6);
-        rtnl_unregister_all(PF_INET6);
 out_sock_register_fail:
         rawv6_exit();
-out_unregister_ping_proto:
-        proto_unregister(&pingv6_prot);
-out_unregister_raw_proto:
-        proto_unregister(&rawv6_prot);
-out_unregister_udplite_proto:
-        proto_unregister(&udplitev6_prot);
-out_unregister_udp_proto:
-        /*NOTE MARK:  review*/
-        proto_unregister(&udp_ilnp6_proto);
+// out_unregister_udp_proto:
+//         /*NOTE MARK:  review*/
+//         proto_unregister(&udp_ilnp6_proto);
 out_unregister_tcp_proto:
         proto_unregister(&tcpv6_prot);
         goto out;
 }
 
-module_init(ilnp6_init);
+//module_init();
+fs_initcall(ilnp6_init);
 
 MODULE_ALIAS_NETPROTO(PF_ILNP6);

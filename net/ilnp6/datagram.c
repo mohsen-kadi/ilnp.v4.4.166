@@ -21,6 +21,7 @@
 #include <linux/sockios.h>
 #include <linux/in6.h>
 #include <linux/ipv6.h>
+#include <linux/ilnp6.h>
 #include <linux/route.h>
 #include <linux/slab.h>
 #include <linux/export.h>

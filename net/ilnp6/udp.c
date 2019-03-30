@@ -22,6 +22,7 @@
 #include <linux/netdevice.h>
 #include <linux/if_arp.h>
 #include <linux/ipv6.h>
+#include <linux/ilnp6.h>
 #include <linux/icmpv6.h>
 #include <linux/init.h>
 #include <linux/module.h>

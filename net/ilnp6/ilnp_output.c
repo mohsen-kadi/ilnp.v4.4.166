@@ -37,6 +37,16 @@
 // for tcp: int ip6_xmit(const struct sock *sk, struct sk_buff *skb, struct flowi6 *fl6,
 //                        struct ipv6_txoptions *opt, int tclass)
 
+
+// copied from /net/ipv6/ip6_output.c#L863
+static inline int ip6_rt_check(const struct rt6key *rt_key,
+                               const struct in6_addr *fl_addr,
+                               const struct in6_addr *addr_cache)
+{
+        return (rt_key->plen != 128 || !ipv6_addr_equal(fl_addr, &rt_key->addr)) &&
+               (!addr_cache || !ipv6_addr_equal(fl_addr, addr_cache));
+}
+
 static struct dst_entry *ilnp6_sk_dst_check(struct sock *sk,
                                             struct dst_entry *dst,
                                             const struct flowi6 *fl6)
@@ -109,7 +119,7 @@ struct dst_entry *ilnp6_sk_dst_lookup_flow(struct sock *sk, struct flowi6 *fl6,
 
         return dst;
 }
-EXPORT_SYMBOL_GPL(ip6_sk_dst_lookup_flow);
+EXPORT_SYMBOL_GPL(ilnp6_sk_dst_lookup_flow);
 
 // check for sending the nonce, after sending using the new family
 // check for sending the nonce
