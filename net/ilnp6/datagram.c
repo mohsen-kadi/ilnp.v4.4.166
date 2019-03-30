@@ -226,4 +226,4 @@ int ilnp6_datagram_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len
         release_sock(sk);
         return res;
 }
-EXPORT_SYMBOL_GPL(ip6_datagram_connect);
+EXPORT_SYMBOL_GPL(ilnp6_datagram_connect);

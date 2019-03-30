@@ -1,4 +1,4 @@
-// based on /include/net/ip6_output.c
+// based on /include/net/ipv6.h
 
 #include <linux/ipv6.h>
 #include <linux/hardirq.h>
@@ -16,8 +16,8 @@
 #define ILNP_INC_STATS(net, idev,field)		\
 		_DEVINC(net, ipv6, 64, idev, field)
 
-
-		struct dst_entry *ilnp6_sk_dst_lookup_flow(struct sock *sk, struct flowi6 *fl6,
+extern const struct proto_ops ilnp6_dgram_ops;
+struct dst_entry *ilnp6_sk_dst_lookup_flow(struct sock *sk, struct flowi6 *fl6,
 							 const struct in6_addr *final_dst);
 
 int ilnp6_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len);
