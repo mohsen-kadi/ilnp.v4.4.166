@@ -41,6 +41,10 @@
 #include <net/ilnp6.h>
 
 
+static bool ilnpv6_mapped_addr_any(const struct in6_addr *a)
+{
+        return ipv6_addr_v4mapped(a) && (a->s6_addr32[3] == 0);
+}
 
 static int __ilnp6_datagram_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 {
@@ -115,11 +119,11 @@ ipv4_connected:
                 ipv6_addr_set_v4mapped(inet->inet_daddr, &sk->sk_v6_daddr);
 
                 if (ipv6_addr_any(&np->saddr) ||
-                    ipv6_mapped_addr_any(&np->saddr))
+                    ilnpv6_mapped_addr_any(&np->saddr))
                         ipv6_addr_set_v4mapped(inet->inet_saddr, &np->saddr);
 
                 if (ipv6_addr_any(&sk->sk_v6_rcv_saddr) ||
-                    ipv6_mapped_addr_any(&sk->sk_v6_rcv_saddr)) {
+                    ilnpv6_mapped_addr_any(&sk->sk_v6_rcv_saddr)) {
                         ipv6_addr_set_v4mapped(inet->inet_rcv_saddr,
                                                &sk->sk_v6_rcv_saddr);
                         if (sk->sk_prot->rehash)

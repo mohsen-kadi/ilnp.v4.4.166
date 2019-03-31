@@ -44,6 +44,9 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <trace/events/skb.h>
+// for build error
+#include <net/ilnp6.h>
+
 #include "udp_impl.h"
 
 
@@ -551,7 +554,7 @@ int udp_ilnpv6_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int nobl
 }
 void udp_ilnpv6_destroy_sock(struct sock *sk)
 {
-        struct udp_sock *up = udp_sk(sk);
+        //struct udp_sock *up = udp_sk(sk);
         lock_sock(sk);
         udp_ilnpv6_flush_pending_frames(sk);
         release_sock(sk);
@@ -677,7 +680,7 @@ struct proto udp_ilnp6_proto = {
         .slab_flags    = SLAB_DESTROY_BY_RCU,
         .h.udp_table     = &udp_table,
 #ifdef CONFIG_COMPAT
-        .compat_setsockopt = compat_udpv6_setsockopt,
+        .compat_setsockopt = compat_udp_ilnpv6_setsockopt,
         .compat_getsockopt = compat_udp_ilnpv6_getsockopt,
 #endif
         .clear_sk    = udp_ilnpv6_clear_sk,
