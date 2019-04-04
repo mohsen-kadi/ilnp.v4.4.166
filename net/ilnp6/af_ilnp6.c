@@ -85,7 +85,22 @@ static DEFINE_SPINLOCK(ilnpsw6_lock); /*used inregister and unregister*/
 // module_param_named(autoconf, ilnpv6_defaults.autoconf, int, 0444);
 // MODULE_PARM_DESC(autoconf, "Enable ILNPv6 address autoconfiguration on all interfaces");
 
+// NOTE MARK: reed ilnpv6_rcv implementation
+static struct packet_type ilnpv6_packet_type __read_mostly = {
+        .type = cpu_to_be16(ETH_P_IPV6),
+        .func = ilnpv6_rcv,
+};
 
+static int __init ilnpv6_packet_init(void)
+{
+        dev_add_pack(&ilnpv6_packet_type);
+        return 0;
+}
+
+static void ilnpv6_packet_cleanup(void)
+{
+        dev_remove_pack(&ilnpv6_packet_type);
+}
 // repeated from /net/ipv6/af_inet6.c#L93
 static __inline__ struct ipv6_pinfo *inet6_sk_generic(struct sock *sk)
 {
@@ -597,9 +612,13 @@ static int __init ilnp6_init(void)
         err = udp_ilnp6_init();
         if (err)
                 goto udpv6_fail;
+        err = ilnpv6_packet_init();
+        if (err)
+                goto ipv6_packet_fail;
 out:
         return err;
-
+ipv6_packet_fail:
+        tcpv6_exit();
 
 udpv6_fail:
         ipv6_frag_exit();
