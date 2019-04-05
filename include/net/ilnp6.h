@@ -22,8 +22,9 @@ extern const struct proto_ops ilnp6_dgram_ops;
  *	rcv function (called from netdevice level)
  */
 
-int ilnpv6_rcv(struct sk_buff *skb, struct net_device *dev,
-	     struct packet_type *pt, struct net_device *orig_dev);
+// not used
+// int ilnpv6_rcv(struct sk_buff *skb, struct net_device *dev,
+// 	     struct packet_type *pt, struct net_device *orig_dev);
 
 /*
  *	upper-layer output functions
