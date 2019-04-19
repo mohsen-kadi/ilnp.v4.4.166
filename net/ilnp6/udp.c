@@ -47,21 +47,23 @@
 // for build error
 #include <net/ilnp6.h>
 
-#include "udp_impl.h"
+// for __udp6_lib_rcv & __udp6_lib_err
+#include "../ipv6/udp_impl.h"
+#include "udp_ilnpv6_impl.h"
 
 
 /**/
 // receive, nothing to do
 static __inline__ int udp_ilnpv6_rcv(struct sk_buff *skb)
 {
-        return -1;// __udp6_lib_rcv(skb, &udp_table, IPPROTO_UDP);
+        return __udp6_lib_rcv(skb, &udp_table, IPPROTO_UDP);
 }
 
 static __inline__ void udp_ilnpv6_err(struct sk_buff *skb,
                                       struct inet6_skb_parm *opt, u8 type,
                                       u8 code, int offset, __be32 info)
 {
-        return;//__udp6_lib_err(skb, opt, type, code, offset, info, &udp_table);
+        __udp6_lib_err(skb, opt, type, code, offset, info, &udp_table);
 }
 /**/
 
@@ -666,7 +668,8 @@ struct proto udp_ilnp6_proto = {
         .setsockopt    = udp_ilnpv6_setsockopt, // review, pass  udp_v6_push_pending_frames as parameter
         .getsockopt    = udp_ilnpv6_getsockopt,
         .sendmsg     = udp_ilnpv6_sendmsg, /*hope it is ok*/
-        .recvmsg     = udp_ilnpv6_recvmsg, /*empty*/
+        //udp_ilnpv6_recvmsg, /*empty*/ review this
+        .recvmsg     =  udpv6_recvmsg,
         .backlog_rcv     = __udp_ilnpv6_queue_rcv_skb,
         .hash      = udp_lib_hash,
         .unhash      = udp_lib_unhash,
