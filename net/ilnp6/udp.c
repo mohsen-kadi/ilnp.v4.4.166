@@ -392,10 +392,18 @@ do_udp_sendmsg:
 
         fl6.flowi6_mark = sk->sk_mark;
 
+        // we have at least one extension headers
+        opt = &opt_space;
+        memset(opt, 0, sizeof(struct ipv6_txoptions));
+        opt->tot_len = sizeof(*opt);
+        // add nonce to the opt
+        err = ilnp6_datagram_send_nonce(opt);
+        if (err < 0) {
+                //fl6_sock_release(flowlabel);
+                printk(KERN_ERR "Failed at sending the nonce\n");
+                return err;
+        }
         if (msg->msg_controllen) {
-                opt = &opt_space;
-                memset(opt, 0, sizeof(struct ipv6_txoptions));
-                opt->tot_len = sizeof(*opt);
 
                 err = ip6_datagram_send_ctl(sock_net(sk), sk, msg, &fl6, opt,
                                             &hlimit, &tclass, &dontfrag);

@@ -550,6 +550,28 @@ int ilnp6_getname(struct socket *sock, struct sockaddr *uaddr,
 }
 EXPORT_SYMBOL(ilnp6_getname);
 
+// to do:
+// rec, set the struct at ipv6 ext hdrs
+int ilnp6_datagram_send_nonce(struct ipv6_txoptions *opt)
+{
+        struct ipv6_nonce_hdr *hdr  = NULL;
+        int err = 0;
+        hdr = kmalloc(sizeof(struct ipv6_nonce_hdr), GFP_ATOMIC);
+        //memset(&fl6, 0, sizeof(fl6));
+        if (!hdr) {
+                err = -EINVAL;
+                goto exit_f;
+        }
+        hdr->hdrlen = 0x0;
+        hdr->opt_type= 0x8B;
+        hdr->opt_len = 0x04;
+        hdr->nonce = 7;
+        opt->opt_flen += ((hdr->hdrlen + 1) << 3);;
+        opt->dst1opt = (struct ipv6_opt_hdr *)hdr;
+exit_f:
+        return err;
+}
+
 // NOTE MARK: DEPEND ON INET6 INIT & EXIT..
 // static struct pernet_operations ilnp6_net_ops = {
 //         .init = inet6_net_init,

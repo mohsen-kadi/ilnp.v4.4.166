@@ -11,6 +11,15 @@
 
 #include <net/sock.h>
 
+
+
+struct ipv6_nonce_hdr {
+	__u8		nexthdr;
+	__u8		hdrlen;
+	__u8		opt_type;
+	__u8		opt_len;
+	u32 		nonce;
+}__attribute__((packed));	/* required for some archs */
 /* MIBs */
 
 #define ILNP_INC_STATS(net, idev,field)		\
@@ -41,3 +50,5 @@ int ilnp6_getname(struct socket *sock, struct sockaddr *uaddr,
 int ilnp6_datagram_connect(struct sock *sk, struct sockaddr *addr, int addr_len);
 
 int ilnp_send_skb(struct sk_buff *skb);
+
+int ilnp6_datagram_send_nonce(struct ipv6_txoptions *opt);
