@@ -11,15 +11,6 @@
 
 #include <net/sock.h>
 
-
-
-struct ipv6_nonce_hdr {
-	__u8		nexthdr;
-	__u8		hdrlen;
-	__u8		opt_type;
-	__u8		opt_len;
-	u32 		nonce;
-}__attribute__((packed));	/* required for some archs */
 /* MIBs */
 
 #define ILNP_INC_STATS(net, idev,field)		\

@@ -1,9 +1,9 @@
 /*
- *	Types and definitions for AF_INET6 
- *	Linux INET6 implementation 
+ *	Types and definitions for AF_INET6
+ *	Linux INET6 implementation
  *
  *	Authors:
- *	Pedro Roque		<roque@di.fc.ul.pt>	
+ *	Pedro Roque		<roque@di.fc.ul.pt>
  *
  *	Sources:
  *	IPv6 Program Interfaces for BSD Systems
@@ -96,7 +96,7 @@ struct in6_flowlabel_req {
 
 
 /*
- *	Bitmask constant declarations to help applications select out the 
+ *	Bitmask constant declarations to help applications select out the
  *	flow label and priority fields.
  *
  *	Note that this are in host byte order while the flowinfo field of
@@ -145,6 +145,7 @@ struct in6_flowlabel_req {
 #define IPV6_TLV_ROUTERALERT	5
 #define IPV6_TLV_JUMBO		194
 #define IPV6_TLV_HAO		201	/* home address option */
+#define IPV6_TLV_NONCE		139	/* nonce option for ILNP */
 
 /*
  *	IPV6 socket options
