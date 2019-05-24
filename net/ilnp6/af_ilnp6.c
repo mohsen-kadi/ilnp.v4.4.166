@@ -554,20 +554,22 @@ EXPORT_SYMBOL(ilnp6_getname);
 // rec, set the struct at ipv6 ext hdrs
 int ilnp6_datagram_send_nonce(struct ipv6_txoptions *opt)
 {
-        struct ipv6_nonce_hdr *hdr  = NULL;
+        // ipv6_opt_hdr is the same as ipv6_destopt_hdr
+        struct ipv6_opt_hdr *dstopt;
+        struct ipv6_destopt_nonce *nonce  = NULL;
         int err = 0;
-        hdr = kmalloc(sizeof(struct ipv6_nonce_hdr), GFP_ATOMIC);
-        //memset(&fl6, 0, sizeof(fl6));
-        if (!hdr) {
+        dstopt = kmalloc(sizeof(struct ipv6_opt_hdr), GFP_ATOMIC);
+        if (!dstopt) {
                 err = -EINVAL;
                 goto exit_f;
         }
-        hdr->hdrlen = 0x0;
-        hdr->opt_type= 0x8B;
-        hdr->opt_len = 0x04;
-        hdr->nonce = 7;
-        opt->opt_flen += ((hdr->hdrlen + 1) << 3);;
-        opt->dst1opt = (struct ipv6_opt_hdr *)hdr;
+        dstopt->hdrlen = 0x0;
+        nonce = (void *)(dstopt + 1);
+        nonce->type= IPV6_TLV_NONCE;
+        nonce->length = 0x04;
+        nonce->nonce = 0x0007;
+        opt->opt_flen += ((dstopt->hdrlen + 1) << 3);
+        opt->dst1opt = dstopt;
 exit_f:
         return err;
 }

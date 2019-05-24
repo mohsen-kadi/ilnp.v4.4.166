@@ -65,14 +65,6 @@ struct ipv6_opt_hdr {
 } __attribute__((packed));	/* required for some archs */
 
 
-struct ipv6_nonce_hdr {
-	__u8		nexthdr;
-	__u8		hdrlen;
-	__u8		opt_type;
-	__u8		opt_len;
-	u32 		nonce;
-}__attribute__((packed));	/* required for some archs */
-
 #define ipv6_destopt_hdr ipv6_opt_hdr
 #define ipv6_hopopt_hdr  ipv6_opt_hdr
 
@@ -113,6 +105,11 @@ struct ipv6_destopt_hao {
 	struct in6_addr		addr;
 } __attribute__((packed));
 
+struct ipv6_destopt_nonce {
+	__u8		type;
+	__u8		length;
+	u32 		nonce;
+}__attribute__((packed));	/* required for some archs */
 /*
  *	IPv6 fixed header
  *
