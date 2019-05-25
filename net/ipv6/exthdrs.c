@@ -245,12 +245,12 @@ static bool ipv6_dest_nonce(struct sk_buff *skb, int optoff)
 								//struct in6_addr tmp_addr;
 								int ret;
 								// NOTE MARK, to be done check for duplicate
-								// if (opt->dsthao) {
-								//         net_dbg_ratelimited("hao duplicated\n");
-								//         goto discard;
-								// }
-								// opt->dsthao = opt->dst1;
-								// opt->dst1 = 0;
+								if (opt->dst_nonce) {
+																net_dbg_ratelimited("destination nonce duplicated\n");
+																goto discard;
+								}
+								opt->dst_nonce = opt->dst1;
+								opt->dst1 = 0;
 
 								nonce = (struct ipv6_destopt_nonce *)(skb_network_header(skb) + optoff);
 								// NOTE MARK, to be done check for length
@@ -259,6 +259,7 @@ static bool ipv6_dest_nonce(struct sk_buff *skb, int optoff)
 								//                             hao->length);
 								//         goto discard;
 								// }
+								printk(KERN_INFO "Length of nonce: Hex: %X, Decimal: %d\n",nonce->length,nonce->length);
 								printk(KERN_INFO "Value of nonce: Hex: %X, Decimal: %d\n",nonce->nonce,nonce->nonce);
 								//printk(KERN_INFO "nonce value: %x \n", nonce->nonce);
 
