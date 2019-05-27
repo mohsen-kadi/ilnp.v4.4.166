@@ -469,12 +469,13 @@ back_from_confirm:
         /* Lockless fast path for the non-corking case */
         if (!corkreq) {
                 struct sk_buff *skb;
-
                 skb = ip6_make_skb(sk, getfrag, msg, ulen,
                                    sizeof(struct udphdr), hlimit, tclass, opt,
                                    &fl6, (struct rt6_info *)dst,
                                    msg->msg_flags, dontfrag);
                 err = PTR_ERR(skb);
+                // to mark out going skb as ilnp
+                IP6CB(skb)->dst_nonce = AF_ILNP6;
                 if (!IS_ERR_OR_NULL(skb))
                         err = udp_ilnpv6_send_skb(skb, &fl6);
                 goto release_dst;
