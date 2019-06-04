@@ -53,6 +53,7 @@
 #include <trace/events/skb.h>
 #include "udp_impl.h"
 
+
 static u32 udp6_ehashfn(const struct net *net,
 																								const struct in6_addr *laddr,
 																								const u16 lport,
@@ -152,8 +153,7 @@ static inline int compute_score(struct sock *sk, struct net *net,
 
 								if (!net_eq(sock_net(sk), net) ||
 												udp_sk(sk)->udp_port_hash != hnum ||
-								    // added by MARK to catch the socket
-												(sk->sk_family != PF_INET6 &&  sk->sk_family != PF_ILNP6))
+												(sk->sk_family != PF_INET6))
 																return -1;
 
 								score = 0;
@@ -199,8 +199,7 @@ static inline int compute_score2(struct sock *sk, struct net *net,
 
 								if (!net_eq(sock_net(sk), net) ||
 												udp_sk(sk)->udp_port_hash != hnum ||
-								    // added by MARK to catch the socket
-												(sk->sk_family != PF_INET6 &&  sk->sk_family != PF_ILNP6))
+												(sk->sk_family != PF_INET6))
 																return -1;
 
 								if (!ipv6_addr_equal(&sk->sk_v6_rcv_saddr, daddr))
@@ -852,6 +851,7 @@ start_lookup:
 int __udp6_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 																			int proto)
 {
+
 								struct net *net = dev_net(skb->dev);
 								struct sock *sk;
 								struct udphdr *uh;
@@ -960,12 +960,13 @@ discard:
 								return 0;
 }
 
-// NOTE: check if marking the skb with nonce is ok
 static __inline__ int udpv6_rcv(struct sk_buff *skb)
 {
 								struct inet6_skb_parm *opt = IP6CB(skb);
+								// move to ilnpv6 functions
 								if (opt->dst_nonce) {
 																printk(KERN_INFO "This socket with nonce, so ILNP based on IP6CB \n");
+																return __udp_ilnpv6_lib_rcv(skb, &udp_table, IPPROTO_UDP);
 								}
 								return __udp6_lib_rcv(skb, &udp_table, IPPROTO_UDP);
 }

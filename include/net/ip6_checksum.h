@@ -48,6 +48,29 @@ static inline __wsum ip6_compute_pseudo(struct sk_buff *skb, int proto)
 					    skb->len, proto, 0));
 }
 
+// for ILNPv6
+static inline __wsum ilnpv6_compute_pseudo(struct sk_buff *skb, int proto)
+{
+	// for check sum
+	struct in6_addr *temp_sender_nid, *temp_dest_nid;
+	temp_sender_nid = kmalloc(sizeof(*temp_sender_nid), GFP_KERNEL);
+	temp_sender_nid->s6_addr32[0]= temp_sender_nid->s6_addr32[1] = htonl(0x00000000);
+	temp_sender_nid->s6_addr32[2] = ipv6_hdr(skb)->saddr.s6_addr32[2];
+	temp_sender_nid->s6_addr32[3] = ipv6_hdr(skb)->saddr.s6_addr32[3];
+	temp_dest_nid = kmalloc(sizeof(*temp_dest_nid), GFP_KERNEL);
+	temp_dest_nid->s6_addr32[0]= temp_dest_nid->s6_addr32[1] = htonl(0x00000000);
+	temp_dest_nid->s6_addr32[2] = ipv6_hdr(skb)->daddr.s6_addr32[2];
+	temp_dest_nid->s6_addr32[3] = ipv6_hdr(skb)->daddr.s6_addr32[3];
+
+	// return ~csum_unfold(csum_ipv6_magic(&ipv6_hdr(skb)->saddr,
+	// 				    &ipv6_hdr(skb)->daddr,
+	// 				    skb->len, proto, 0));
+	return ~csum_unfold(csum_ipv6_magic(temp_sender_nid,
+					    temp_dest_nid,
+					    skb->len, proto, 0));
+
+}
+
 static inline __wsum ip6_gro_compute_pseudo(struct sk_buff *skb, int proto)
 {
 	const struct ipv6hdr *iph = skb_gro_network_header(skb);
@@ -103,4 +126,5 @@ void udp6_set_csum(bool nocheck, struct sk_buff *skb,
 		   const struct in6_addr *daddr, int len);
 
 int udp6_csum_init(struct sk_buff *skb, struct udphdr *uh, int proto);
+int udp_ilnpv6_csum_init(struct sk_buff *skb, struct udphdr *uh, int proto);
 #endif

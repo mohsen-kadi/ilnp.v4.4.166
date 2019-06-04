@@ -7,6 +7,8 @@
 #include <net/inet_common.h>
 #include <net/transp_v6.h>
 
+// after 10 tries to build, moved to here
+int __udp_ilnpv6_lib_rcv(struct sk_buff *skb, struct udp_table *udptable, int proto);
 int __udp6_lib_rcv(struct sk_buff *, struct udp_table *, int);
 void __udp6_lib_err(struct sk_buff *, struct inet6_skb_parm *, u8, u8, int,
 		    __be32, struct udp_table *);

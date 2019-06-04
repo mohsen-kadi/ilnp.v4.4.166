@@ -11,8 +11,6 @@
 
 // here put your stuff
 
-
-
 int udp_ilnpv6_sendmsg(struct sock *sk, struct msghdr *msg, size_t len);
 int udp_ilnpv6_recvmsg(struct sock *sk, struct msghdr *msg, size_t len, int noblock,
 		  int flags, int *addr_len);
