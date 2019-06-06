@@ -18,6 +18,9 @@
 
 extern const struct proto_ops ilnp6_dgram_ops;
 
+
+
+
 /*
  *	rcv function (called from netdevice level)
  */

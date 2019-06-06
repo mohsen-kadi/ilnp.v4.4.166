@@ -294,7 +294,8 @@ static inline void inet_sk_copy_descendant(struct sock *sk_to,
 
 static inline const struct in6_addr *inet6_rcv_saddr(const struct sock *sk)
 {
-	if (sk->sk_family == AF_INET6)
+	// NOTE: added by mark just in case
+	if ((sk->sk_family == AF_INET6) || (sk->sk_family == AF_ILNP6) )
 		return &sk->sk_v6_rcv_saddr;
 	return NULL;
 }
