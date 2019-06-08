@@ -33,6 +33,7 @@
 #include <linux/stat.h>
 #include <linux/init.h>
 #include <linux/slab.h>
+#include <linux/bootmem.h>
 
 #include <linux/inet.h>
 #include <linux/netdevice.h>
@@ -63,6 +64,10 @@
 MODULE_AUTHOR("HIAST");
 MODULE_DESCRIPTION("ILNPv6 protocol stack for Linux");
 MODULE_LICENSE("GPL");
+
+/*ILCC for ILNP v6*/
+struct ilcc_table ilcc_table __read_mostly;
+EXPORT_SYMBOL(ilcc_table);
 
 /* The ilnpsw6 table contains everything that ilnp6_create needs to
  * build a new socket.
@@ -550,6 +555,46 @@ int ilnp6_getname(struct socket *sock, struct sockaddr *uaddr,
 }
 EXPORT_SYMBOL(ilnp6_getname);
 
+
+static __initdata unsigned long ilcc_uhash_entries;
+static int __init set_ilnpv6_uhash_entries(char *str)
+{
+        ssize_t ret;
+
+        if (!str)
+                return 0;
+
+        ret = kstrtoul(str, 0, &ilcc_uhash_entries);
+        if (ret)
+                return 0;
+
+        if (ilcc_uhash_entries && ilcc_uhash_entries < UDP_HTABLE_SIZE_MIN)
+                ilcc_uhash_entries = UDP_HTABLE_SIZE_MIN;
+        return 1;
+}
+__setup("ilcc_uhash_entries=", set_ilnpv6_uhash_entries);
+
+void __init ilcc_table_init(struct ilcc_table *table, const char *name)
+{
+        unsigned int i;
+
+        table->hash = alloc_large_system_hash(name,
+                                              sizeof(struct ilcc_table),
+                                              UDP_HTABLE_SIZE_MIN,
+                                              21, /* one slot per 2 MB */
+                                              0,
+                                              &table->log,
+                                              &table->mask,
+                                              UDP_HTABLE_SIZE_MIN,
+                                              64 * 1024);
+
+        for (i = 0; i <= table->mask; i++) {
+                INIT_HLIST_NULLS_HEAD(&table->hash[i].head, i);
+                table->hash[i].count = 0;
+                spin_lock_init(&table->hash[i].lock);
+        }
+}
+
 // to do:
 // rec, set the struct at ipv6 ext hdrs
 int ilnp6_datagram_send_nonce(struct ipv6_txoptions *opt)
@@ -620,6 +665,7 @@ static int __init ilnp6_init(void)
         err = udp_ilnp6_init();
         if (err)
                 goto udpv6_fail;
+        ilcc_table_init(&ilcc_table, "ILCC_hash_table");
 out:
         return err;
 
