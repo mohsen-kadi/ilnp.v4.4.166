@@ -580,7 +580,7 @@ void __init ilcc_table_init(struct ilcc_table *table, const char *name)
 
         table->hash = alloc_large_system_hash(name,
                                               sizeof(struct ilcc_table),
-                                              UDP_HTABLE_SIZE_MIN,
+                                              ilcc_uhash_entries,
                                               21, /* one slot per 2 MB */
                                               0,
                                               &table->log,
@@ -665,7 +665,7 @@ static int __init ilnp6_init(void)
         err = udp_ilnp6_init();
         if (err)
                 goto udpv6_fail;
-        ilcc_table_init(&ilcc_table, "ILCC_hash_table");
+        ilcc_table_init(&ilcc_table, "ILCC");
 out:
         return err;
 
