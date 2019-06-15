@@ -681,6 +681,12 @@ out_unregister_tcp_proto:
         goto out;
 }
 
+
+
+/* ilcc functions*/
+
+
+/* end of ilcc functions*/
 //module_init();
 fs_initcall(ilnp6_init);
 

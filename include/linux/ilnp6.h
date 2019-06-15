@@ -16,16 +16,5 @@ extern struct ilnpv6_params ilnpv6_defaults;
 #include <net/inet_sock.h>
 
 
-/*
-	ILNP v6 Identifier Locator Communication Cache's functions
-*/
-static inline u32 ilcc_hashfn(u32 num, u32 mask)
-{
-	return (num) & mask;
-	/*
-	return (num + net_hash_mix(net)) & mask;
-	*/
-}
-
 
 //#endif /* _ILNPV6_H */

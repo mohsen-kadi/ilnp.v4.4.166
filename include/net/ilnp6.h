@@ -52,6 +52,19 @@ struct l64
 /*may we need for device associated with this prefix*/
 };
 
+// represent a node identifier
+struct nid
+{
+								union {
+																__u8 u6_addr8[8];
+																__be16 u6_addr16[4];
+																__be32 u6_addr32[2];
+								} nid_u;
+								#define  nid_addr      nid_u.u6_addr8
+				#define  nid_addr16      nid_u.u6_addr16
+				#define  nid_addr32      nid_u.u6_addr32
+};
+
 // represent a session in ILNP
 struct ilcc_entry
 {
@@ -124,6 +137,32 @@ struct ilcc_table {
 
 void ilcc_table_init(struct ilcc_table *, const char *);
 
+/*
+	ILNP v6 Identifier Locator Communication Cache's functions
+*/
+static inline u32 ilcc_hashfn(u32 num, u32 mask)
+{
+	return (num) & mask;
+	/*
+	return (num + net_hash_mix(net)) & mask;
+	*/
+}
+
+struct l64 *get_l64_from_in6_addr(struct in6_addr *source){
+	struct l64 *l64;
+	l64 = kmalloc(sizeof(*l64), GFP_KERNEL);
+	l64->s6_addr32[0] = source->s6_addr32[0];
+	l64->s6_addr32[1] = source->s6_addr32[1];
+	return l64;
+}
+
+struct nid *get_nid_from_in6_addr(struct in6_addr *source){
+	struct nid *nid;
+	nid = kmalloc(sizeof(*nid), GFP_KERNEL);
+	nid->s6_addr32[0] = source->s6_addr32[2];
+	nid->s6_addr32[1] = source->s6_addr32[3];
+	return nid;
+}
 /*
  *	rcv function (called from netdevice level)
  */
