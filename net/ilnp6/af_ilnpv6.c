@@ -713,7 +713,7 @@ struct ilcc_entry *ilcc_nid_lookup(struct nid *nid, __be16 port)
         // go to bucket,
         unsigned short dport = ntohs(port);
         unsigned int slot = ilcc_hashfn(dport, ilcc_table.mask);
-        struct ilcc_slot *hslot = ilcc_table.hash[slot];
+        struct ilcc_slot *hslot = &ilcc_table.hash[slot];
         // for each session in the list
         // as in __udp4_lib_lookup
 begin:
@@ -734,7 +734,7 @@ int add_entry_to_ilcc(struct ilcc_entry *entry)
 {
         unsigned short dport = ntohs(entry->dport);
         unsigned int slot = ilcc_hashfn(dport, ilcc_table.mask);
-        struct ilcc_slot *hslot = ilcc_table.hash[slot];
+        struct ilcc_slot *hslot = &ilcc_table.hash[slot];
         int err = 0;
         spin_lock(&hslot->lock);
         hlist_nulls_add_head_rcu(&entry->node,
