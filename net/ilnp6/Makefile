@@ -4,5 +4,5 @@
 
 obj-y += ilnpv6.o
 
-ilnpv6-objs :=	af_ilnp6.o ilnp_output.o \
-		udp.o datagram.o protocol.o ilnp6_input.o
+ilnpv6-objs :=	af_ilnpv6.o ilnpv6_output.o \
+		udp.o datagram.o protocol.o ilnpv6_input.o
