@@ -682,6 +682,9 @@ struct sk_buff *__ilnpv6_make_skb(struct sock *sk,
         hdr->hop_limit = v6_cork->hop_limit;
         hdr->nexthdr = proto;
         hdr->saddr = fl6->saddr;
+        // to specify the the destination address we need to check ilcc
+        // get remote nid,
+        // the dport: fl6->fl6_dport
         hdr->daddr = *final_dst;
 
         skb->priority = sk->sk_priority;

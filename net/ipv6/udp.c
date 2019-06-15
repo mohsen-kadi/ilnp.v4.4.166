@@ -965,7 +965,6 @@ static __inline__ int udpv6_rcv(struct sk_buff *skb)
 								struct inet6_skb_parm *opt = IP6CB(skb);
 								// move to ilnpv6 functions
 								if (opt->dst_nonce) {
-																printk(KERN_INFO "This socket with nonce, so ILNP based on IP6CB \n");
 																return __udp_ilnpv6_lib_rcv(skb, &udp_table, IPPROTO_UDP);
 								}
 								return __udp6_lib_rcv(skb, &udp_table, IPPROTO_UDP);

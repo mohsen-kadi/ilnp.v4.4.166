@@ -69,31 +69,15 @@ struct nid
 struct ilcc_entry
 {
 								// ports, source port will be used as hash key
-								__be16 source;
-								__be16 dest;
+								__be16 sport;
+								__be16 dport;
 								// local nid
-								union {
-																__u8 u6_addr8[8];
-																__be16 u6_addr16[4];
-																__be32 u6_addr32[2];
-								} local_nid_u;
-								#define local_nid      local_nid_u.u6_addr8
-				#define local_nid16      local_nid_u.u6_addr16
-				#define local_nid32      local_nid_u.u6_addr32
-
+								struct nid local_nid;
 								int32_t local_nonce;
 								// remote data
 								int32_t remote_nonce;
 								/* remote nid*/
-								union {
-																__u8 u6_addr8[8];
-																__be16 u6_addr16[4];
-																__be32 u6_addr32[2];
-								} remote_nid_u;
-				#define remote_nid      remote_nid_u.u6_addr8
-				#define remote_nid16      remote_nid_u.u6_addr16
-				#define remote_nid32      remote_nid_u.u6_addr32
-
+								struct nid remote_nid;
 								// list for local and remote locator
 								// local locator will present at ilcc table also,
 								// its existence here for future use in increasing granularity
@@ -138,34 +122,58 @@ struct ilcc_table {
 void ilcc_table_init(struct ilcc_table *, const char *);
 
 /*
-	ILNP v6 Identifier Locator Communication Cache's functions
-*/
+   ILNP v6 Identifier Locator Communication Cache's functions
+ */
 static inline u32 ilcc_hashfn(u32 num, u32 mask)
 {
-	return (num) & mask;
-	/*
-	return (num + net_hash_mix(net)) & mask;
-	*/
+								return (num) & mask;
+								/*
+								   return (num + net_hash_mix(net)) & mask;
+								 */
 }
 
-struct l64 *get_l64_from_in6_addr(struct in6_addr *source){
-	struct l64 *l64;
-	l64 = kmalloc(sizeof(*l64), GFP_KERNEL);
-	l64->s6_addr32[0] = source->s6_addr32[0];
-	l64->s6_addr32[1] = source->s6_addr32[1];
-	return l64;
+static inline struct l64 *get_l64_from_in6_addr(struct in6_addr *source){
+								struct l64 *l64;
+								l64 = kmalloc(sizeof(*l64), GFP_KERNEL);
+								l64->s6_addr32[0] = source->s6_addr32[0];
+								l64->s6_addr32[1] = source->s6_addr32[1];
+								return l64;
 }
 
-struct nid *get_nid_from_in6_addr(struct in6_addr *source){
-	struct nid *nid;
-	nid = kmalloc(sizeof(*nid), GFP_KERNEL);
-	nid->s6_addr32[0] = source->s6_addr32[2];
-	nid->s6_addr32[1] = source->s6_addr32[3];
-	return nid;
+static inline struct nid *get_nid_from_in6_addr(struct in6_addr *source){
+								struct nid *nid;
+								nid = kmalloc(sizeof(*nid), GFP_KERNEL);
+								nid->s6_addr32[0] = source->s6_addr32[2];
+								nid->s6_addr32[1] = source->s6_addr32[3];
+								return nid;
+}
+
+static inline struct in6_addr *get_in6_addr_from_ilv(struct nid *nid,struct l64 *l64)
+{
+	struct in6_addr *addr;
+	addr = kmalloc(sizeof(*addr), GFP_KERNEL);
+	addr->s6_addr32[0] = l64->s6_addr32[0];
+	addr->s6_addr32[1] = l64->s6_addr32[1];
+	addr->s6_addr32[2] = nid->s6_addr32[0];
+	addr->s6_addr32[3] = nid->s6_addr32[1];
+	return addr;
+}
+
+static inline bool is_nid_equal(struct nid *src, struct nid *dst)
+{
+	return ((src->nid_addr32[0] ^ dst->nid_addr32[0]) |
+									(src->nid_addr32[1] ^ dst->nid_addr32[1])) == 0;
+
 }
 /*
  *	rcv function (called from netdevice level)
  */
+int add_entry_to_ilcc(struct ilcc_entry *entry);
+struct ilcc_entry *ilcc_nid_lookup(struct nid *nid, __be16 port);
+
+struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t snonce, struct in6_addr *daddr, __be16 dport, int32_t dnonce);
+struct in6_addr *ilnpv6_get_saddr(struct in6_addr *saddr, __be16 sport, struct in6_addr *daddr, __be16 dport);
+
 
 // not used
 // int ilnpv6_rcv(struct sk_buff *skb, struct net_device *dev,
@@ -176,12 +184,12 @@ struct sk_buff *__ilnpv6_make_skb(struct sock *sk, struct sk_buff_head *queue,
 																																		struct inet6_cork *v6_cork);
 
 struct sk_buff *ilnpv6_make_skb(struct sock *sk,
-																													int getfrag(void *from, char *to, int offset,
-																																									int len, int odd, struct sk_buff *skb),
-																													void *from, int length, int transhdrlen,
-																													int hlimit, int tclass, struct ipv6_txoptions *opt,
-																													struct flowi6 *fl6, struct rt6_info *rt,
-																													unsigned int flags, int dontfrag);
+																																int getfrag(void *from, char *to, int offset,
+																																												int len, int odd, struct sk_buff *skb),
+																																void *from, int length, int transhdrlen,
+																																int hlimit, int tclass, struct ipv6_txoptions *opt,
+																																struct flowi6 *fl6, struct rt6_info *rt,
+																																unsigned int flags, int dontfrag);
 
 
 
