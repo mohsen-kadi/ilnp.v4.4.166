@@ -709,7 +709,7 @@ static int udp_ilnpv6_send_skb(struct sk_buff *skb, struct flowi6 *fl6)
                 uh->check = CSUM_MANGLED_0;
 
 send:
-        err = ip6_send_skb(skb);
+        err = ilnp_send_skb(skb);
         if (err) {
                 if (err == -ENOBUFS && !inet6_sk(sk)->recverr) {
                         UDP6_INC_STATS_USER(sock_net(sk),
@@ -754,7 +754,7 @@ static int udp_ilnpv6_push_pending_frames(struct sock *sk)
          */
         fl6 = inet_sk(sk)->cork.fl.u.ip6;
 
-        skb = ip6_finish_skb(sk);
+        skb = ilnpv6_finish_skb(sk);
         if (!skb)
                 goto out;
 

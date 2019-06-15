@@ -132,6 +132,27 @@ void ilcc_table_init(struct ilcc_table *, const char *);
 // int ilnpv6_rcv(struct sk_buff *skb, struct net_device *dev,
 //       struct packet_type *pt, struct net_device *orig_dev);
 
+struct sk_buff *__ilnpv6_make_skb(struct sock *sk, struct sk_buff_head *queue,
+																																		struct inet_cork_full *cork,
+																																		struct inet6_cork *v6_cork);
+
+struct sk_buff *ilnpv6_make_skb(struct sock *sk,
+																													int getfrag(void *from, char *to, int offset,
+																																									int len, int odd, struct sk_buff *skb),
+																													void *from, int length, int transhdrlen,
+																													int hlimit, int tclass, struct ipv6_txoptions *opt,
+																													struct flowi6 *fl6, struct rt6_info *rt,
+																													unsigned int flags, int dontfrag);
+
+
+
+
+static inline struct sk_buff *ilnpv6_finish_skb(struct sock *sk)
+{
+								return __ip6_make_skb(sk, &sk->sk_write_queue, &inet_sk(sk)->cork,
+																														&inet6_sk(sk)->cork);
+}
+
 /* more secured version of ipv6_addr_hash() */
 static inline u32 __ilnpv6_addr_jhash(const struct in6_addr *a, const u32 initval)
 {
