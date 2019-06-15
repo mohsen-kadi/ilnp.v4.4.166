@@ -135,16 +135,16 @@ static inline u32 ilcc_hashfn(u32 num, u32 mask)
 static inline struct l64 *get_l64_from_in6_addr(struct in6_addr *source){
 								struct l64 *l64;
 								l64 = kmalloc(sizeof(*l64), GFP_KERNEL);
-								l64->s6_addr32[0] = source->s6_addr32[0];
-								l64->s6_addr32[1] = source->s6_addr32[1];
+								l64->locator_addr32[0] = source->s6_addr32[0];
+								l64->locator_addr32[1] = source->s6_addr32[1];
 								return l64;
 }
 
 static inline struct nid *get_nid_from_in6_addr(struct in6_addr *source){
 								struct nid *nid;
 								nid = kmalloc(sizeof(*nid), GFP_KERNEL);
-								nid->s6_addr32[0] = source->s6_addr32[2];
-								nid->s6_addr32[1] = source->s6_addr32[3];
+								nid->nid_addr32[0] = source->s6_addr32[2];
+								nid->nid_addr32[1] = source->s6_addr32[3];
 								return nid;
 }
 
@@ -152,10 +152,10 @@ static inline struct in6_addr *get_in6_addr_from_ilv(struct nid *nid,struct l64 
 {
 	struct in6_addr *addr;
 	addr = kmalloc(sizeof(*addr), GFP_KERNEL);
-	addr->s6_addr32[0] = l64->s6_addr32[0];
-	addr->s6_addr32[1] = l64->s6_addr32[1];
-	addr->s6_addr32[2] = nid->s6_addr32[0];
-	addr->s6_addr32[3] = nid->s6_addr32[1];
+	addr->s6_addr32[0] = l64->locator_addr32[0];
+	addr->s6_addr32[1] = l64->locator_addr32[1];
+	addr->s6_addr32[2] = nid->nid_addr32[0];
+	addr->s6_addr32[3] = nid->nid_addr32[1];
 	return addr;
 }
 

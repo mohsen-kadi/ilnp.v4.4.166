@@ -80,10 +80,10 @@ void print_l64_value(const struct l64 *locator)
 {
         char str[40];
         sprintf(str, "%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-                (int)locator->value[0], (int)locator->value[1],
-                (int)locator->value[2], (int)locator->value[3],
-                (int)locator->value[4], (int)locator->value[5],
-                (int)locator->value[6], (int)locator->value[7]);
+                (int)locator->locator_addr[0], (int)locator->locator_addr[1],
+                (int)locator->locator_addr[2], (int)locator->locator_addr[3],
+                (int)locator->locator_addr[4], (int)locator->locator_addr[5],
+                (int)locator->locator_addr[6], (int)locator->locator_addr[7]);
         printk("l64: value: %s\n",str);
 }
 
@@ -712,8 +712,8 @@ struct ilcc_entry *ilcc_nid_lookup(struct nid *nid, __be16 port)
         struct hlist_nulls_node *node;
         // go to bucket,
         unsigned short dport = ntohs(port);
-        unsigned int slot = ilcc_hashfn(dport, ilcc_table->mask);
-        struct ilcc_slot *hslot = ilcc_table->hash[slot];
+        unsigned int slot = ilcc_hashfn(dport, ilcc_table.mask);
+        struct ilcc_slot *hslot = ilcc_table.hash[slot];
         // for each session in the list
         // as in __udp4_lib_lookup
 begin:
@@ -733,8 +733,8 @@ EXPORT_SYMBOL_GPL(ilcc_nid_lookup);
 int add_entry_to_ilcc(struct ilcc_entry *entry)
 {
         unsigned short dport = ntohs(entry->dport);
-        unsigned int slot = ilcc_hashfn(dport, ilcc_table->mask);
-        struct ilcc_slot *hslot = ilcc_table->hash[slot];
+        unsigned int slot = ilcc_hashfn(dport, ilcc_table.mask);
+        struct ilcc_slot *hslot = ilcc_table.hash[slot];
         int err = 0;
         spin_lock(&hslot->lock);
         hlist_nulls_add_head_rcu(&entry->node,
@@ -759,15 +759,15 @@ struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t 
         dnid = get_nid_from_in6_addr(daddr);
         dl64 = get_l64_from_in6_addr(daddr);
         // get the cache entry
-        struct ilcc_entry = ilcc_nid_lookup(dnid, dport);
-        if(ilcc_entry) //existed
+        entry = ilcc_nid_lookup(dnid, dport);
+        if(entry) //existed
         {
                 // existed, check the locator status
                 // either update the locator or keep it
                 // the provided locator is the initial locator,
                 // need function to this with the list head pointer
                 printk(KERN_INFO " iterating over remote locator \n");
-                list_for_each_entry(temp, &ilcc_entry->remote_locators, node) {
+                list_for_each_entry(temp, &entry->remote_locators, node) {
                         // the passed entry contains list of locator, with just only one
                         //if(loc->locator.value == temp->locator.value)
                         //      return true;
@@ -796,7 +796,7 @@ struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t 
                 dl64->ttl = 100;
                 dl64->preference = 1;
                 list_add_tail(&(dl64->node),&(entry->remote_locators));
-                //add_entry_to_ilcc
+                //add entry to ilcc
                 err = add_entry_to_ilcc(entry);
                 if(err)
                 {
@@ -824,21 +824,20 @@ struct in6_addr *ilnpv6_get_saddr(struct in6_addr *saddr, __be16 sport, struct i
         struct nid *snid, *dnid;
         struct l64 *sl64, *dl64, *temp;
         struct ilcc_entry *entry = NULL;
-        int err = 0;
         snid = get_nid_from_in6_addr(saddr);
         sl64 = get_l64_from_in6_addr(saddr);
         dnid = get_nid_from_in6_addr(daddr);
         dl64 = get_l64_from_in6_addr(daddr);
         // get the cache entry
-        struct ilcc_entry = ilcc_nid_lookup(dnid, dport);
-        if(ilcc_entry) //existed
+        entry = ilcc_nid_lookup(dnid, dport);
+        if(entry) //existed
         {
                 // existed, check the locator status
                 // either update the locator or keep it
                 // the provided locator is the initial locator,
                 // need function to this with the list head pointer
                 printk(KERN_INFO " iterating over local locator \n");
-                list_for_each_entry(temp, &ilcc_entry->local_locators, node) {
+                list_for_each_entry(temp, &entry->local_locators, node) {
                         // the passed entry contains list of locator, with just only one
                         //if(loc->locator.value == temp->locator.value)
                         //      return true;
@@ -848,10 +847,9 @@ struct in6_addr *ilnpv6_get_saddr(struct in6_addr *saddr, __be16 sport, struct i
                 return saddr;
         }
         else // not existed, error
-        {
                 printk(KERN_INFO " Failed in getting cache entry for locally generated traffic \n");
-                return NULL;
-        }
+        return NULL;
+
 }
 EXPORT_SYMBOL_GPL(ilnpv6_get_saddr);
 /* end of ilcc functions*/
