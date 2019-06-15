@@ -683,8 +683,8 @@ struct sk_buff *__ilnpv6_make_skb(struct sock *sk,
         hdr->hop_limit = v6_cork->hop_limit;
         hdr->nexthdr = proto;
         //*temp_daddr, *temp_saddr
-        temp_daddr = ilnpv6_get_daddr(fl6->saddr, fl6->fl6_sport, 7,
-                                      *final_dst, fl6->fl6_dport, 7);
+        temp_daddr = ilnpv6_get_daddr(&fl6->saddr, fl6->fl6_sport, 7,
+                                      final_dst, fl6->fl6_dport, 7);
         // to specify the the destination address we need to check ilcc
         // get remote nid,
         // the dport: fl6->fl6_dport
@@ -698,7 +698,7 @@ struct sk_buff *__ilnpv6_make_skb(struct sock *sk,
                 printk(KERN_INFO " destination address not found \n");
                 hdr->daddr = *final_dst;
         }
-        temp_saddr = ilnpv6_get_saddr(l6->saddr, fl6->fl6_sport,*final_dst, fl6->fl6_dport);
+        temp_saddr = ilnpv6_get_saddr(&fl6->saddr, fl6->fl6_sport, final_dst, fl6->fl6_dport);
         if(temp_saddr)
         {
                 printk(KERN_INFO " source address found \n");
