@@ -990,10 +990,10 @@ back_from_confirm:
         /* Lockless fast path for the non-corking case */
         if (!corkreq) {
                 struct sk_buff *skb;
-                skb = ip6_make_skb(sk, getfrag, msg, ulen,
-                                   sizeof(struct udphdr), hlimit, tclass, opt,
-                                   &fl6, (struct rt6_info *)dst,
-                                   msg->msg_flags, dontfrag);
+                skb = ilnpv6_make_skb(sk, getfrag, msg, ulen,
+                                      sizeof(struct udphdr), hlimit, tclass, opt,
+                                      &fl6, (struct rt6_info *)dst,
+                                      msg->msg_flags, dontfrag);
                 err = PTR_ERR(skb);
                 // to mark out going skb as ilnp
                 IP6CB(skb)->dst_nonce = AF_ILNP6;
@@ -1019,10 +1019,10 @@ do_append_data:
         if (dontfrag < 0)
                 dontfrag = np->dontfrag;
         up->len += ulen;
-        err = ip6_append_data(sk, getfrag, msg, ulen,
-                              sizeof(struct udphdr), hlimit, tclass, opt, &fl6,
-                              (struct rt6_info *)dst,
-                              corkreq ? msg->msg_flags|MSG_MORE : msg->msg_flags, dontfrag);
+        err = ilnpv6_append_data(sk, getfrag, msg, ulen,
+                                 sizeof(struct udphdr), hlimit, tclass, opt, &fl6,
+                                 (struct rt6_info *)dst,
+                                 corkreq ? msg->msg_flags|MSG_MORE : msg->msg_flags, dontfrag);
         if (err)
                 udp_ilnpv6_flush_pending_frames(sk);
         else if (!corkreq)

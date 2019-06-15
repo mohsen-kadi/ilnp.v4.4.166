@@ -179,6 +179,13 @@ struct in6_addr *ilnpv6_get_saddr(struct in6_addr *saddr, __be16 sport, struct i
 // int ilnpv6_rcv(struct sk_buff *skb, struct net_device *dev,
 //       struct packet_type *pt, struct net_device *orig_dev);
 
+int ilnpv6_append_data(struct sock *sk,
+		    int getfrag(void *from, char *to, int offset, int len,
+				int odd, struct sk_buff *skb),
+		    void *from, int length, int transhdrlen, int hlimit,
+		    int tclass, struct ipv6_txoptions *opt, struct flowi6 *fl6,
+		    struct rt6_info *rt, unsigned int flags, int dontfrag);
+
 struct sk_buff *__ilnpv6_make_skb(struct sock *sk, struct sk_buff_head *queue,
 																																		struct inet_cork_full *cork,
 																																		struct inet6_cork *v6_cork);

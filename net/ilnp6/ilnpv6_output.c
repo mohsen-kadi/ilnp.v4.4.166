@@ -607,6 +607,43 @@ error:
         return err;
 }
 
+int ilnpv6_append_data(struct sock *sk,
+                       int getfrag(void *from, char *to, int offset, int len,
+                                   int odd, struct sk_buff *skb),
+                       void *from, int length, int transhdrlen, int hlimit,
+                       int tclass, struct ipv6_txoptions *opt, struct flowi6 *fl6,
+                       struct rt6_info *rt, unsigned int flags, int dontfrag)
+{
+        struct inet_sock *inet = inet_sk(sk);
+        struct ipv6_pinfo *np = inet6_sk(sk);
+        int exthdrlen;
+        int err;
+
+        if (flags&MSG_PROBE)
+                return 0;
+        if (skb_queue_empty(&sk->sk_write_queue)) {
+                /*
+                 * setup for corking
+                 */
+                err = ilnpv6_setup_cork(sk, &inet->cork, &np->cork, hlimit,
+                                        tclass, opt, rt, fl6);
+                if (err)
+                        return err;
+
+                exthdrlen = (opt ? opt->opt_flen : 0);
+                length += exthdrlen;
+                transhdrlen += exthdrlen;
+        } else {
+                fl6 = &inet->cork.fl.u.ip6;
+                transhdrlen = 0;
+        }
+
+        return __ilnpv6_append_data(sk, fl6, &sk->sk_write_queue, &inet->cork.base,
+                                    &np->cork, sk_page_frag(sk), getfrag,
+                                    from, length, transhdrlen, flags, dontfrag);
+}
+EXPORT_SYMBOL_GPL(ilnpv6_append_data);
+
 static void ilnpv6_cork_release(struct inet_cork_full *cork,
                                 struct inet6_cork *v6_cork)
 {
