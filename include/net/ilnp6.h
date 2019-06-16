@@ -26,6 +26,10 @@
 #define ILNP_INC_STATS(net, idev,field)  \
 								_DEVINC(net, ipv6, 64, idev, field)
 
+#define ILCC_VALID   4
+#define ILCC_ACTIVE  3
+#define ILCC_EXPIRED 2
+#define ILCC_AGED    1
 extern const struct proto_ops ilnp6_dgram_ops;
 
 // represent a prefix, note: device info not listed
@@ -150,21 +154,40 @@ static inline struct nid *get_nid_from_in6_addr(struct in6_addr *source){
 
 static inline struct in6_addr *get_in6_addr_from_ilv(struct nid *nid,struct l64 *l64)
 {
-	struct in6_addr *addr;
-	addr = kmalloc(sizeof(*addr), GFP_KERNEL);
-	addr->s6_addr32[0] = l64->locator_addr32[0];
-	addr->s6_addr32[1] = l64->locator_addr32[1];
-	addr->s6_addr32[2] = nid->nid_addr32[0];
-	addr->s6_addr32[3] = nid->nid_addr32[1];
-	return addr;
+								struct in6_addr *addr;
+								addr = kmalloc(sizeof(*addr), GFP_KERNEL);
+								addr->s6_addr32[0] = l64->locator_addr32[0];
+								addr->s6_addr32[1] = l64->locator_addr32[1];
+								addr->s6_addr32[2] = nid->nid_addr32[0];
+								addr->s6_addr32[3] = nid->nid_addr32[1];
+								return addr;
 }
 
 static inline bool is_nid_equal(struct nid *src, struct nid *dst)
 {
-	return ((src->nid_addr32[0] ^ dst->nid_addr32[0]) |
-									(src->nid_addr32[1] ^ dst->nid_addr32[1])) == 0;
+								return ((src->nid_addr32[0] ^ dst->nid_addr32[0]) |
+																(src->nid_addr32[1] ^ dst->nid_addr32[1])) == 0;
 
 }
+
+static inline l64 *get_best_l64(struct list_head *head)
+{
+								struct l64 *temp, *result = NULL;
+								int32_t score = 0;
+								list_for_each_entry(temp, head, node) {
+																if(!result)
+																{
+																								result = temp;
+																}
+																if(score < (temp->state + temp->ttl + temp->preference))
+																{
+																								socre = temp->state + temp->ttl + temp->preference;
+																								result = temp;
+																}
+								}
+								return result;
+}
+
 /*
  *	rcv function (called from netdevice level)
  */
@@ -180,11 +203,11 @@ struct in6_addr *ilnpv6_get_saddr(struct in6_addr *saddr, __be16 sport, struct i
 //       struct packet_type *pt, struct net_device *orig_dev);
 
 int ilnpv6_append_data(struct sock *sk,
-		    int getfrag(void *from, char *to, int offset, int len,
-				int odd, struct sk_buff *skb),
-		    void *from, int length, int transhdrlen, int hlimit,
-		    int tclass, struct ipv6_txoptions *opt, struct flowi6 *fl6,
-		    struct rt6_info *rt, unsigned int flags, int dontfrag);
+																							int getfrag(void *from, char *to, int offset, int len,
+																																			int odd, struct sk_buff *skb),
+																							void *from, int length, int transhdrlen, int hlimit,
+																							int tclass, struct ipv6_txoptions *opt, struct flowi6 *fl6,
+																							struct rt6_info *rt, unsigned int flags, int dontfrag);
 
 struct sk_buff *__ilnpv6_make_skb(struct sock *sk, struct sk_buff_head *queue,
 																																		struct inet_cork_full *cork,

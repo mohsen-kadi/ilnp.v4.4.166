@@ -733,7 +733,8 @@ struct sk_buff *__ilnpv6_make_skb(struct sock *sk,
         else
         {
                 printk(KERN_INFO " destination address not found \n");
-                hdr->daddr = *final_dst;
+                return NULL;
+                //hdr->daddr = *final_dst;
         }
         temp_saddr = ilnpv6_get_saddr(&fl6->saddr, fl6->fl6_sport, final_dst, fl6->fl6_dport);
         if(temp_saddr)
@@ -744,7 +745,8 @@ struct sk_buff *__ilnpv6_make_skb(struct sock *sk,
         else
         {
                 printk(KERN_INFO " source address not found \n");
-                hdr->saddr = fl6->saddr;
+                return NULL;
+                //hdr->saddr = fl6->saddr;
         }
         skb->priority = sk->sk_priority;
         skb->mark = sk->sk_mark;

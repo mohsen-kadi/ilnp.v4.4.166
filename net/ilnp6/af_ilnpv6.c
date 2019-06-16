@@ -755,8 +755,6 @@ struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t 
         struct l64 *sl64, *dl64, *temp;
         struct ilcc_entry *entry = NULL;
         int err = 0;
-        snid = get_nid_from_in6_addr(saddr);
-        sl64 = get_l64_from_in6_addr(saddr);
         dnid = get_nid_from_in6_addr(daddr);
         dl64 = get_l64_from_in6_addr(daddr);
         // get the cache entry
@@ -767,19 +765,15 @@ struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t 
                 // either update the locator or keep it
                 // the provided locator is the initial locator,
                 // need function to this with the list head pointer
-                printk(KERN_INFO " iterating over remote locator \n");
-                list_for_each_entry(temp, &entry->remote_locators, node) {
-                        // the passed entry contains list of locator, with just only one
-                        //if(loc->locator.value == temp->locator.value)
-                        //      return true;
-                        print_l64(temp);
-                }
-                printk(KERN_INFO " end of iterating over remote locator \n");
-                return daddr;
+                printk(KERN_INFO " searching for the best remote locator \n");
+                temp = get_best_l64(&entry->remote_locators);
+                return get_in6_addr_from_ilv(dnid,temp);
         }
         else // not existed, build & add & return
         {
                 // build the entry and add it...
+                snid = get_nid_from_in6_addr(saddr);
+                sl64 = get_l64_from_in6_addr(saddr);
                 entry = kmalloc(sizeof(*entry), GFP_KERNEL);
                 entry->sport = sport;
                 entry->dport = dport;
@@ -788,12 +782,12 @@ struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t 
                 entry->local_nonce = 0x0007;
                 entry->remote_nonce = 0x0007;
                 INIT_LIST_HEAD(&entry->local_locators);
-                sl64->state = 1;
+                sl64->state = ILCC_ACTIVE;
                 sl64->ttl = 100;
                 sl64->preference = 1;
                 list_add_tail(&(sl64->node),&(entry->local_locators));
                 INIT_LIST_HEAD(&entry->remote_locators);
-                dl64->state = 1;
+                dl64->state = ILCC_ACTIVE;
                 dl64->ttl = 100;
                 dl64->preference = 1;
                 list_add_tail(&(dl64->node),&(entry->remote_locators));
@@ -836,22 +830,15 @@ struct in6_addr *ilnpv6_get_saddr(struct in6_addr *saddr, __be16 sport, struct i
                 // existed, check the locator status
                 // either update the locator or keep it
                 // the provided locator is the initial locator,
-                // need function to this with the list head pointer
-                printk(KERN_INFO " iterating over local locator \n");
-                list_for_each_entry(temp, &entry->local_locators, node) {
-                        // the passed entry contains list of locator, with just only one
-                        //if(loc->locator.value == temp->locator.value)
-                        //      return true;
-                        print_l64(temp);
-                }
-                printk(KERN_INFO " end of iterating over local locator \n");
-                return saddr;
+                printk(KERN_INFO " searching for the best remote locator \n");
+                temp = get_best_l64(&entry->local_locators);
+                return get_in6_addr_from_ilv(snid,temp);
         }
         else // not existed, error
                 printk(KERN_INFO " Failed in getting cache entry for locally generated traffic \n");
         return NULL;
-
 }
+
 EXPORT_SYMBOL_GPL(ilnpv6_get_saddr);
 /* end of ilcc functions*/
 //module_init();
