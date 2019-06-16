@@ -170,7 +170,7 @@ static inline bool is_nid_equal(struct nid *src, struct nid *dst)
 
 }
 
-static inline l64 *get_best_l64(struct list_head *head)
+static inline struct l64 *get_best_l64(struct list_head *head)
 {
 								struct l64 *temp, *result = NULL;
 								int32_t score = 0;
@@ -181,7 +181,7 @@ static inline l64 *get_best_l64(struct list_head *head)
 																}
 																if(score < (temp->state + temp->ttl + temp->preference))
 																{
-																								socre = temp->state + temp->ttl + temp->preference;
+																								score = temp->state + temp->ttl + temp->preference;
 																								result = temp;
 																}
 								}
