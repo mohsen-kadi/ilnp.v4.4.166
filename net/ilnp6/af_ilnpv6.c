@@ -741,6 +741,7 @@ int add_entry_to_ilcc(struct ilcc_entry *entry)
                                  &hslot->head);
         hslot->count++;
         spin_unlock(&hslot->lock);
+        printk(KERN_INFO " New entry added to ilcc \n");
         return err;
 }
 EXPORT_SYMBOL_GPL(add_entry_to_ilcc);
