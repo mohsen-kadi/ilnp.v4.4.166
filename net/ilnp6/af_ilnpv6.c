@@ -779,8 +779,8 @@ struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t 
                 entry->dport = dport;
                 entry->local_nid = *snid;
                 entry->remote_nid = *dnid;
-                entry->local_nonce = 0x0007;
-                entry->remote_nonce = 0x0007;
+                entry->local_nonce = snonce;
+                entry->remote_nonce = dnonce;
                 INIT_LIST_HEAD(&entry->local_locators);
                 sl64->state = ILCC_ACTIVE;
                 sl64->ttl = 100;
@@ -830,7 +830,7 @@ struct in6_addr *ilnpv6_get_saddr(struct in6_addr *saddr, __be16 sport, struct i
                 // existed, check the locator status
                 // either update the locator or keep it
                 // the provided locator is the initial locator,
-                printk(KERN_INFO " searching for the best remote locator \n");
+                printk(KERN_INFO " searching for the best source locator \n");
                 temp = get_best_l64(&entry->local_locators);
                 return get_in6_addr_from_ilv(snid,temp);
         }
