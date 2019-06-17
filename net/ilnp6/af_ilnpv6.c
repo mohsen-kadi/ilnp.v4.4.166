@@ -94,6 +94,17 @@ void print_l64(const struct l64 *locator)
         printk(KERN_INFO "l64: ttl: %d \n", locator->ttl);
         printk(KERN_INFO "l64: preference: %d \n", locator->preference);
 }
+
+void print_nid(const struct nid *nid)
+{
+        char str[40];
+        sprintf(str, "%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                (int)nid->locator_addr[0], (int)nid->locator_addr[1],
+                (int)nid->locator_addr[2], (int)nid->locator_addr[3],
+                (int)nid->locator_addr[4], (int)nid->locator_addr[5],
+                (int)nid->locator_addr[6], (int)nid->locator_addr[7]);
+        printk("nid: value: %s\n",str);
+}
 /* to delete functions */
 
 

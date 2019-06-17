@@ -262,8 +262,10 @@ found:
         // add new entry to ilcc
         // build the entry and add it...
         printk(KERN_INFO " The port are source: %d , des: %d \n", snum, sk->sk_dport);
+        printk("the source ip: %pI6 \n", sk->sk_v6_rcv_saddr);
         snid = get_nid_from_in6_addr(&sk->sk_v6_rcv_saddr);
         sl64 = get_l64_from_in6_addr(&sk->sk_v6_rcv_saddr);
+        printk("the destination ip: %pI6 \n", sk->sk_v6_daddr);
         dnid = get_nid_from_in6_addr(&sk->sk_v6_daddr);
         dl64 = get_l64_from_in6_addr(&sk->sk_v6_daddr);
         entry = kmalloc(sizeof(*entry), GFP_KERNEL);
