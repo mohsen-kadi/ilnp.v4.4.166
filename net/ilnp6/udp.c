@@ -285,7 +285,7 @@ found:
         list_add_tail(&(dl64->node),&(entry->remote_locators));
         //add entry to ilcc
         error = add_entry_to_ilcc(entry);
-        if(err)
+        if(error)
         {
                 printk(KERN_INFO " Failed in adding cache entry to ilcc table \n");
                 return -ENOMEM;;
