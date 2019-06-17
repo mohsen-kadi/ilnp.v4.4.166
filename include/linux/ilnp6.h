@@ -16,5 +16,11 @@ extern struct ilnpv6_params ilnpv6_defaults;
 #include <net/inet_sock.h>
 
 
+static inline const struct in6_addr *inet6_ilnpv6_rcv_saddr(const struct sock *sk)
+{
+	if (sk->sk_family == AF_ILNP6)
+		return &sk->sk_v6_rcv_saddr;
+	return NULL;
+}
 
 //#endif /* _ILNPV6_H */

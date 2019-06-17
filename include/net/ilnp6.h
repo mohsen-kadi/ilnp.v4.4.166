@@ -226,7 +226,7 @@ struct sk_buff *ilnpv6_make_skb(struct sock *sk,
 
 static inline struct sk_buff *ilnpv6_finish_skb(struct sock *sk)
 {
-								return __ip6_make_skb(sk, &sk->sk_write_queue, &inet_sk(sk)->cork,
+								return __ilnpv6_make_skb(sk, &sk->sk_write_queue, &inet_sk(sk)->cork,
 																														&inet6_sk(sk)->cork);
 }
 

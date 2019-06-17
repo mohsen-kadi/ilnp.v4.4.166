@@ -48,23 +48,261 @@
 #include <net/ilnp6.h>
 
 // for __udp6_lib_rcv & __udp6_lib_err
-#include "../ipv6/udp_impl.h"
+//#include "../ipv6/udp_impl.h"
 #include "udp_ilnpv6_impl.h"
 
 
 /**/
 // receive, nothing to do, use less
-static __inline__ int udp_ilnpv6_rcv(struct sk_buff *skb)
+
+int ilnpv6_rcv_saddr_equal(const struct sock *sk, const struct sock *sk2)
 {
-        return __udp6_lib_rcv(skb, &udp_table, IPPROTO_UDP);
+        const struct in6_addr *sk2_rcv_saddr6 = inet6_ilnpv6_rcv_saddr(sk2);
+        int sk2_ipv6only = inet_v6_ipv6only(sk2);
+        int addr_type = ipv6_addr_type(&sk->sk_v6_rcv_saddr);
+        int addr_type2 = sk2_rcv_saddr6 ? ipv6_addr_type(sk2_rcv_saddr6) : IPV6_ADDR_MAPPED;
+
+        /* if both are mapped, treat as IPv4 */
+        if (addr_type == IPV6_ADDR_MAPPED && addr_type2 == IPV6_ADDR_MAPPED)
+                return (!sk2_ipv6only &&
+                        (!sk->sk_rcv_saddr || !sk2->sk_rcv_saddr ||
+                         sk->sk_rcv_saddr == sk2->sk_rcv_saddr));
+
+        if (addr_type2 == IPV6_ADDR_ANY &&
+            !(sk2_ipv6only && addr_type == IPV6_ADDR_MAPPED))
+                return 1;
+
+        if (addr_type == IPV6_ADDR_ANY &&
+            !(ipv6_only_sock(sk) && addr_type2 == IPV6_ADDR_MAPPED))
+                return 1;
+
+        if (sk2_rcv_saddr6 &&
+            ilnpv6_nid_equal(&sk->sk_v6_rcv_saddr, sk2_rcv_saddr6))
+                return 1;
+
+        return 0;
 }
 
-static __inline__ void udp_ilnpv6_err(struct sk_buff *skb,
-                                      struct inet6_skb_parm *opt, u8 type,
-                                      u8 code, int offset, __be32 info)
+static int udp_ilnpv6_lib_lport_inuse(struct net *net, __u16 num,
+                                      const struct udp_hslot *hslot,
+                                      unsigned long *bitmap,
+                                      struct sock *sk,
+                                      int (*saddr_comp)(const struct sock *sk1,
+                                                        const struct sock *sk2),
+                                      unsigned int log)
 {
-        __udp6_lib_err(skb, opt, type, code, offset, info, &udp_table);
+        struct sock *sk2;
+        struct hlist_nulls_node *node;
+        kuid_t uid = sock_i_uid(sk);
+
+        sk_nulls_for_each(sk2, node, &hslot->head) {
+                if (net_eq(sock_net(sk2), net) &&
+                    sk2 != sk &&
+                    (bitmap || udp_sk(sk2)->udp_port_hash == num) &&
+                    (!sk2->sk_reuse || !sk->sk_reuse) &&
+                    (!sk2->sk_bound_dev_if || !sk->sk_bound_dev_if ||
+                     sk2->sk_bound_dev_if == sk->sk_bound_dev_if) &&
+                    (!sk2->sk_reuseport || !sk->sk_reuseport ||
+                     !uid_eq(uid, sock_i_uid(sk2))) &&
+                    saddr_comp(sk, sk2)) {
+                        if (!bitmap)
+                                return 1;
+                        __set_bit(udp_sk(sk2)->udp_port_hash >> log, bitmap);
+                }
+        }
+        return 0;
 }
+
+
+/*
+ * Note: we still hold spinlock of primary hash chain, so no other writer
+ * can insert/delete a socket with local_port == num
+ */
+static int udp_ilnpv6_lib_lport_inuse2(struct net *net, __u16 num,
+                                       struct udp_hslot *hslot2,
+                                       struct sock *sk,
+                                       int (*saddr_comp)(const struct sock *sk1,
+                                                         const struct sock *sk2))
+{
+        struct sock *sk2;
+        struct hlist_nulls_node *node;
+        kuid_t uid = sock_i_uid(sk);
+        int res = 0;
+
+        spin_lock(&hslot2->lock);
+        udp_portaddr_for_each_entry(sk2, node, &hslot2->head) {
+                if (net_eq(sock_net(sk2), net) &&
+                    sk2 != sk &&
+                    (udp_sk(sk2)->udp_port_hash == num) &&
+                    (!sk2->sk_reuse || !sk->sk_reuse) &&
+                    (!sk2->sk_bound_dev_if || !sk->sk_bound_dev_if ||
+                     sk2->sk_bound_dev_if == sk->sk_bound_dev_if) &&
+                    (!sk2->sk_reuseport || !sk->sk_reuseport ||
+                     !uid_eq(uid, sock_i_uid(sk2))) &&
+                    saddr_comp(sk, sk2)) {
+                        res = 1;
+                        break;
+                }
+        }
+        spin_unlock(&hslot2->lock);
+        return res;
+}
+/**
+ *  udp_ilnpv6_lib_get_port  -  UDP/-Lite port lookup for ILNPv6
+ *
+ *  @sk:          socket struct in question
+ *  @snum:        port number to look up
+ *  @saddr_comp:  AF-dependent comparison of bound local IP addresses
+ *  @hash2_nulladdr: AF-dependent hash value in secondary hash chains,
+ *                   with NULL address
+ */
+int udp_ilnpv6_lib_get_port(struct sock *sk, unsigned short snum,
+                            int (*saddr_comp)(const struct sock *sk1,
+                                              const struct sock *sk2),
+                            unsigned int hash2_nulladdr)
+{
+        struct udp_hslot *hslot, *hslot2;
+        struct udp_table *udptable = sk->sk_prot->h.udp_table;
+        int error = 1;
+        struct net *net = sock_net(sk);
+        struct ilcc_entry *entry;
+        struct nid *snid, *dnid;
+        struct l64 *sl64, *dl64;
+        if (!snum) {
+                int low, high, remaining;
+                unsigned int rand;
+                unsigned short first, last;
+                DECLARE_BITMAP(bitmap, PORTS_PER_CHAIN);
+
+                inet_get_local_port_range(net, &low, &high);
+                remaining = (high - low) + 1;
+
+                rand = prandom_u32();
+                first = reciprocal_scale(rand, remaining) + low;
+                /*
+                 * force rand to be an odd multiple of UDP_HTABLE_SIZE
+                 */
+                rand = (rand | 1) * (udptable->mask + 1);
+                last = first + udptable->mask + 1;
+                do {
+                        hslot = udp_hashslot(udptable, net, first);
+                        bitmap_zero(bitmap, PORTS_PER_CHAIN);
+                        spin_lock_bh(&hslot->lock);
+                        udp_ilnpv6_lib_lport_inuse(net, snum, hslot, bitmap, sk,
+                                                   saddr_comp, udptable->log);
+
+                        snum = first;
+                        /*
+                         * Iterate on all possible values of snum for this hash.
+                         * Using steps of an odd multiple of UDP_HTABLE_SIZE
+                         * give us randomization and full range coverage.
+                         */
+                        do {
+                                if (low <= snum && snum <= high &&
+                                    !test_bit(snum >> udptable->log, bitmap) &&
+                                    !inet_is_local_reserved_port(net, snum))
+                                        goto found;
+                                snum += rand;
+                        } while (snum != first);
+                        spin_unlock_bh(&hslot->lock);
+                } while (++first != last);
+                goto fail;
+        } else {
+                hslot = udp_hashslot(udptable, net, snum);
+                spin_lock_bh(&hslot->lock);
+                if (hslot->count > 10) {
+                        int exist;
+                        unsigned int slot2 = udp_sk(sk)->udp_portaddr_hash ^ snum;
+
+                        slot2          &= udptable->mask;
+                        hash2_nulladdr &= udptable->mask;
+
+                        hslot2 = udp_hashslot2(udptable, slot2);
+                        if (hslot->count < hslot2->count)
+                                goto scan_primary_hash;
+
+                        exist = udp_ilnpv6_lib_lport_inuse2(net, snum, hslot2,
+                                                            sk, saddr_comp);
+                        if (!exist && (hash2_nulladdr != slot2)) {
+                                hslot2 = udp_hashslot2(udptable, hash2_nulladdr);
+                                exist = udp_ilnpv6_lib_lport_inuse2(net, snum, hslot2,
+                                                                    sk, saddr_comp);
+                        }
+                        if (exist)
+                                goto fail_unlock;
+                        else
+                                goto found;
+                }
+scan_primary_hash:
+                if (udp_ilnpv6_lib_lport_inuse(net, snum, hslot, NULL, sk,
+                                               saddr_comp, 0))
+                        goto fail_unlock;
+        }
+found:
+        inet_sk(sk)->inet_num = snum;
+        udp_sk(sk)->udp_port_hash = snum;
+        udp_sk(sk)->udp_portaddr_hash ^= snum;
+        if (sk_unhashed(sk)) {
+                sk_nulls_add_node_rcu(sk, &hslot->head);
+                hslot->count++;
+                sock_prot_inuse_add(sock_net(sk), sk->sk_prot, 1);
+
+                hslot2 = udp_hashslot2(udptable, udp_sk(sk)->udp_portaddr_hash);
+                spin_lock(&hslot2->lock);
+                hlist_nulls_add_head_rcu(&udp_sk(sk)->udp_portaddr_node,
+                                         &hslot2->head);
+                hslot2->count++;
+                spin_unlock(&hslot2->lock);
+        }
+        // add new entry to ilcc
+        // build the entry and add it...
+        printk(KERN_INFO " The port are source: %d , des: %d \n", snum, sk->sk_dport);
+        snid = get_nid_from_in6_addr(&sk->sk_v6_rcv_saddr);
+        sl64 = get_l64_from_in6_addr(&sk->sk_v6_rcv_saddr);
+        dnid = get_nid_from_in6_addr(&sk->sk_v6_daddr);
+        dl64 = get_l64_from_in6_addr(&sk->sk_v6_daddr);
+        entry = kmalloc(sizeof(*entry), GFP_KERNEL);
+        entry->sport = htons(snum);
+        entry->dport = htons(sk->sk_dport);
+        entry->local_nid = *snid;
+        entry->remote_nid = *dnid;
+        entry->local_nonce = snonce;
+        entry->remote_nonce = dnonce;
+        INIT_LIST_HEAD(&entry->local_locators);
+        sl64->state = ILCC_ACTIVE;
+        sl64->ttl = 100;
+        sl64->preference = 1;
+        list_add_tail(&(sl64->node),&(entry->local_locators));
+        INIT_LIST_HEAD(&entry->remote_locators);
+        dl64->state = ILCC_ACTIVE;
+        dl64->ttl = 100;
+        dl64->preference = 1;
+        list_add_tail(&(dl64->node),&(entry->remote_locators));
+        //add entry to ilcc
+        err = add_entry_to_ilcc(entry);
+        if(err)
+        {
+                printk(KERN_INFO " Failed in adding cache entry to ilcc table \n");
+                return -ENOMEM;;
+        }
+        error = 0;
+fail_unlock:
+        spin_unlock_bh(&hslot->lock);
+fail:
+        return error;
+}
+EXPORT_SYMBOL(udp_ilnpv6_lib_get_port);
+// static __inline__ int udp_ilnpv6_rcv(struct sk_buff *skb)
+// {
+//         return __udp6_lib_rcv(skb, &udp_table, IPPROTO_UDP);
+// }
+
+// static __inline__ void udp_ilnpv6_err(struct sk_buff *skb,
+//                                       struct inet6_skb_parm *opt, u8 type,
+//                                       u8 code, int offset, __be32 info)
+// {
+//         __udp6_lib_err(skb, opt, type, code, offset, info, &udp_table);
+// }
 /**/
 
 static inline int compute_score(struct sock *sk, struct net *net,
@@ -189,10 +427,9 @@ int udp_ilnpv6_get_port(struct sock *sk, unsigned short snum)
                 udp_ilnpv6_portaddr_hash(sock_net(sk), &in6addr_any, snum);
         unsigned int hash2_partial =
                 udp_ilnpv6_portaddr_hash(sock_net(sk), &sk->sk_v6_rcv_saddr, 0);
-
         /* precompute partial secondary hash */
         udp_sk(sk)->udp_portaddr_hash = hash2_partial;
-        return udp_lib_get_port(sk, snum, ipv6_rcv_saddr_equal, hash2_nulladdr);
+        return udp_ilnpv6_lib_get_port(sk, snum, ilnpv6_rcv_saddr_equal, hash2_nulladdr);
 }
 
 static bool __udp_ilnpv6_is_mcast_sock(struct net *net, struct sock *sk,
@@ -1332,11 +1569,11 @@ void udp_ilnpv6_clear_sk(struct sock *sk, int size)
 
 
 // NOTE: MARK now we use udp over ipv6, useless
-static const struct inet6_protocol udp_ilnp6_protocol = {
-        .handler = udp_ilnpv6_rcv,
-        .err_handler = udp_ilnpv6_err,
-        .flags   = INET6_PROTO_NOPOLICY|INET6_PROTO_FINAL,
-};
+// static const struct inet6_protocol udp_ilnp6_protocol = {
+//         .handler = udp_ilnpv6_rcv,
+//         .err_handler = udp_ilnpv6_err,
+//         .flags   = INET6_PROTO_NOPOLICY|INET6_PROTO_FINAL,
+// };
 /* ------------------------------------------------------------------------ */
 /*NOTE: MARK review, the previous struct.. for receive*/
 struct proto udp_ilnp6_proto = {
@@ -1382,9 +1619,9 @@ int __init udp_ilnp6_init(void)
 {
         int ret;
         // review
-        ret = ilnp6_add_protocol(&udp_ilnp6_protocol, IPPROTO_UDP);
-        if (ret)
-                goto out;
+        // ret = ilnp6_add_protocol(&udp_ilnp6_protocol, IPPROTO_UDP);
+        // if (ret)
+        //         goto out;
         // review
         ret = ilnp6_register_protosw(&udp_ilnpv6_protosw);
         if (ret)
@@ -1393,7 +1630,7 @@ out:
         return ret;
 
 out_udpv6_protocol:
-        ilnp6_del_protocol(&udp_ilnp6_protocol, IPPROTO_UDP);
+        // ilnp6_del_protocol(&udp_ilnp6_protocol, IPPROTO_UDP);
         goto out;
 }
 
@@ -1401,5 +1638,5 @@ out_udpv6_protocol:
 void udp_ilnp6_exit(void)
 {
         inet6_unregister_protosw(&udp_ilnpv6_protosw);
-        inet6_del_protocol(&udp_ilnp6_protocol, IPPROTO_UDP);
+        // inet6_del_protocol(&udp_ilnp6_protocol, IPPROTO_UDP);
 }

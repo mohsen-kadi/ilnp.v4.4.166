@@ -719,7 +719,7 @@ struct ilcc_entry *ilcc_nid_lookup(struct nid *nid, __be16 port)
 begin:
         hlist_nulls_for_each_entry_rcu(entry, node, &hslot->head, node){
                 //check if it equal to the requested one
-                if(is_nid_equal(&entry->local_nid, nid) && ( entry->dport == port))
+                if(is_nid_equal(&entry->local_nid, nid) && ( entry->sport == port))
                 {
                         return entry;
                 }
@@ -732,8 +732,8 @@ EXPORT_SYMBOL_GPL(ilcc_nid_lookup);
 
 int add_entry_to_ilcc(struct ilcc_entry *entry)
 {
-        unsigned short dport = ntohs(entry->dport);
-        unsigned int slot = ilcc_hashfn(dport, ilcc_table.mask);
+        unsigned short sport = ntohs(entry->sport);
+        unsigned int slot = ilcc_hashfn(sport, ilcc_table.mask);
         struct ilcc_slot *hslot = &ilcc_table.hash[slot];
         int err = 0;
         spin_lock(&hslot->lock);
@@ -758,7 +758,7 @@ struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t 
         dnid = get_nid_from_in6_addr(daddr);
         dl64 = get_l64_from_in6_addr(daddr);
         // get the cache entry
-        entry = ilcc_nid_lookup(dnid, dport);
+        entry = ilcc_nid_lookup(dnid, sport);
         if(entry) //existed
         {
                 // existed, check the locator status
@@ -769,40 +769,8 @@ struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t 
                 temp = get_best_l64(&entry->remote_locators);
                 return get_in6_addr_from_ilv(dnid,temp);
         }
-        else // not existed, build & add & return
-        {
-                // build the entry and add it...
-                snid = get_nid_from_in6_addr(saddr);
-                sl64 = get_l64_from_in6_addr(saddr);
-                entry = kmalloc(sizeof(*entry), GFP_KERNEL);
-                entry->sport = sport;
-                entry->dport = dport;
-                entry->local_nid = *snid;
-                entry->remote_nid = *dnid;
-                entry->local_nonce = snonce;
-                entry->remote_nonce = dnonce;
-                INIT_LIST_HEAD(&entry->local_locators);
-                sl64->state = ILCC_ACTIVE;
-                sl64->ttl = 100;
-                sl64->preference = 1;
-                list_add_tail(&(sl64->node),&(entry->local_locators));
-                INIT_LIST_HEAD(&entry->remote_locators);
-                dl64->state = ILCC_ACTIVE;
-                dl64->ttl = 100;
-                dl64->preference = 1;
-                list_add_tail(&(dl64->node),&(entry->remote_locators));
-                //add entry to ilcc
-                err = add_entry_to_ilcc(entry);
-                if(err)
-                {
-                        printk(KERN_INFO " Failed in adding cache entry to ilcc table \n");
-                        return NULL;
-                }
-                // here we need to build sin6_addr
-                // and return it, in this path it
-                // is the same as daddr
-                return daddr;
-        }
+        else // not existed, error
+                printk(KERN_INFO " Failed in getting cache entry for locally generated traffic \n");
         return NULL;
 }
 EXPORT_SYMBOL_GPL(ilnpv6_get_daddr);
@@ -824,7 +792,7 @@ struct in6_addr *ilnpv6_get_saddr(struct in6_addr *saddr, __be16 sport, struct i
         dnid = get_nid_from_in6_addr(daddr);
         dl64 = get_l64_from_in6_addr(daddr);
         // get the cache entry
-        entry = ilcc_nid_lookup(dnid, dport);
+        entry = ilcc_nid_lookup(dnid, sport);
         if(entry) //existed
         {
                 // existed, check the locator status

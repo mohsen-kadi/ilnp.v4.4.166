@@ -194,6 +194,10 @@ int udp_lib_get_port(struct sock *sk, unsigned short snum,
 		     int (*)(const struct sock *, const struct sock *),
 		     unsigned int hash2_nulladdr);
 
+int udp_ilnpv6_lib_get_port(struct sock *sk, unsigned short snum,
+				 int (*)(const struct sock *, const struct sock *),
+				 unsigned int hash2_nulladdr);
+
 u32 udp_flow_hashrnd(void);
 
 static inline __be16 udp_flow_src_port(struct net *net, struct sk_buff *skb,
