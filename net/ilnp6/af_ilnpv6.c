@@ -751,10 +751,9 @@ EXPORT_SYMBOL_GPL(add_entry_to_ilcc);
 // use rfc for l64 state, and state tras=nsition
 struct in6_addr *ilnpv6_get_daddr(struct in6_addr *saddr, __be16 sport, int32_t snonce, struct in6_addr *daddr, __be16 dport, int32_t dnonce)
 {
-        struct nid *snid, *dnid;
-        struct l64 *sl64, *dl64, *temp;
+        struct nid *dnid;
+        struct l64 *dl64, *temp;
         struct ilcc_entry *entry = NULL;
-        int err = 0;
         dnid = get_nid_from_in6_addr(daddr);
         dl64 = get_l64_from_in6_addr(daddr);
         // get the cache entry

@@ -44,14 +44,19 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <trace/events/skb.h>
+// for bit map
+#include <linux/types.h>
+
 // for build error
 #include <net/ilnp6.h>
 
-// for __udp6_lib_rcv & __udp6_lib_err
-//#include "../ipv6/udp_impl.h"
+
+#include "../ipv6/udp_impl.h"
 #include "udp_ilnpv6_impl.h"
 
 
+#define MAX_UDP_PORTS 65536
+#define PORTS_PER_CHAIN (MAX_UDP_PORTS / UDP_HTABLE_SIZE_MIN)
 /**/
 // receive, nothing to do, use less
 
@@ -266,8 +271,8 @@ found:
         entry->dport = htons(sk->sk_dport);
         entry->local_nid = *snid;
         entry->remote_nid = *dnid;
-        entry->local_nonce = snonce;
-        entry->remote_nonce = dnonce;
+        entry->local_nonce = 0x7;
+        entry->remote_nonce = 0x7;
         INIT_LIST_HEAD(&entry->local_locators);
         sl64->state = ILCC_ACTIVE;
         sl64->ttl = 100;
@@ -279,7 +284,7 @@ found:
         dl64->preference = 1;
         list_add_tail(&(dl64->node),&(entry->remote_locators));
         //add entry to ilcc
-        err = add_entry_to_ilcc(entry);
+        error = add_entry_to_ilcc(entry);
         if(err)
         {
                 printk(KERN_INFO " Failed in adding cache entry to ilcc table \n");
