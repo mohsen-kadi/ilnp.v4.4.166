@@ -99,10 +99,10 @@ void print_nid(const struct nid *nid)
 {
         char str[40];
         sprintf(str, "%02x%02x:%02x%02x:%02x%02x:%02x%02x",
-                (int)nid->locator_addr[0], (int)nid->locator_addr[1],
-                (int)nid->locator_addr[2], (int)nid->locator_addr[3],
-                (int)nid->locator_addr[4], (int)nid->locator_addr[5],
-                (int)nid->locator_addr[6], (int)nid->locator_addr[7]);
+                (int)nid->nid_addr[0], (int)nid->nid_addr[1],
+                (int)nid->nid_addr[2], (int)nid->nid_addr[3],
+                (int)nid->nid_addr[4], (int)nid->nid_addr[5],
+                (int)nid->nid_addr[6], (int)nid->nid_addr[7]);
         printk("nid: value: %s\n",str);
 }
 /* to delete functions */
