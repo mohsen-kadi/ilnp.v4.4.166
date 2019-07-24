@@ -108,7 +108,7 @@ struct ipv6_destopt_hao {
 struct ipv6_destopt_nonce {
 	__u8		type;
 	__u8		length;
-	u32 		nonce;
+	__u32 		nonce;
 }__attribute__((packed));	/* required for some archs */
 /*
  *	IPv6 fixed header

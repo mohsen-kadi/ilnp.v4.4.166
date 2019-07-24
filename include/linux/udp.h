@@ -71,6 +71,8 @@ struct udp_sock {
 	 */
 	int (*encap_rcv)(struct sock *sk, struct sk_buff *skb);
 	void (*encap_destroy)(struct sock *sk);
+	/*for UDP over ILNP, we need nonce value of the socket*/
+	__u32 		nonce;
 };
 
 static inline struct udp_sock *udp_sk(const struct sock *sk)

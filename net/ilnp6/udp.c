@@ -259,6 +259,8 @@ found:
                 hslot2->count++;
                 spin_unlock(&hslot2->lock);
         }
+        // set the local nonce value of the socket
+        udp_sk(sk)->nonce = htons(prandom_u32());
         // add new entry to ilcc
         // build the entry and add it...
         printk(KERN_INFO " The port are source: %d , des: %d \n", snum, sk->sk_dport);
